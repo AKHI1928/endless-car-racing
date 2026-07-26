@@ -1,14 +1,11 @@
 /**
- * Lucky Nitro - Cyberpunk Road with Collision Detection & Game Over
+ * Lucky Nitro - Cyberpunk Road with Improved Enemy Car Horizon Size
  * script.js
  */
 
 // Use the existing canvas from index.html
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
-
-// Game state flag
-let isGameOver = false;
 
 // Handle canvas resizing to match window dimensions
 function resizeCanvas() {
@@ -194,16 +191,6 @@ class PlayerCar {
         }
     }
 
-    // Get bounding box for AABB collision detection
-    getBounds() {
-        return {
-            x: this.x - this.width / 2 + 10,
-            y: this.y - this.height / 2,
-            width: this.width - 20,
-            height: this.height
-        };
-    }
-
     draw(ctx) {
         ctx.save();
         ctx.translate(this.x, this.y);
@@ -273,7 +260,7 @@ class PlayerCar {
 }
 
 /**
- * Enemy Car Class using Perspective Scaling in the Center Lane
+ * Enemy Car Class with Enhanced Horizon Visibility and Perspective Scaling
  */
 class EnemyCar {
     constructor() {
@@ -292,35 +279,6 @@ class EnemyCar {
         }
     }
 
-    // Get bounding box for AABB collision detection based on perspective coordinates
-    getBounds(width, height) {
-        const horizonY = height * 0.35;
-        const bottomY = height;
-        const centerX = width / 2;
-
-        const topRoadWidth = width * 0.15;
-        const bottomRoadWidth = width * 0.55;
-
-        const y = horizonY + this.progress * (bottomY - horizonY);
-        const currentRoadWidth = topRoadWidth + (bottomRoadWidth - topRoadWidth) * this.progress;
-        const roadLeft = centerX - currentRoadWidth / 2;
-        const x = roadLeft + currentRoadWidth * 0.5;
-
-        const baseWidth = 65;
-        const baseHeight = 100;
-        const scale = 0.15 + 0.85 * this.progress;
-
-        const carWidth = baseWidth * scale;
-        const carHeight = baseHeight * scale;
-
-        return {
-            x: x - carWidth / 2,
-            y: y - carHeight / 2,
-            width: carWidth,
-            height: carHeight
-        };
-    }
-
     draw(ctx, width, height) {
         const horizonY = height * 0.35;
         const bottomY = height;
@@ -336,7 +294,8 @@ class EnemyCar {
 
         const baseWidth = 65;
         const baseHeight = 100;
-        const scale = 0.15 + 0.85 * this.progress;
+        // Increased minimum size at horizon by about 2x (from 0.15 to 0.30 base scale)
+        const scale = 0.30 + 0.70 * this.progress;
 
         const carWidth = baseWidth * scale;
         const carHeight = baseHeight * scale;
@@ -344,10 +303,10 @@ class EnemyCar {
         ctx.save();
         ctx.translate(x, y);
 
-        // Draw Enemy Car Body
+        // Enhanced visibility shape for distance
         ctx.fillStyle = '#ffaa00';
         ctx.shadowColor = '#ffaa00';
-        ctx.shadowBlur = 8 * scale;
+        ctx.shadowBlur = 12 * scale;
 
         ctx.beginPath();
         ctx.moveTo(-carWidth / 2 + 8 * scale, carHeight / 2);
@@ -369,12 +328,12 @@ class EnemyCar {
         ctx.closePath();
         ctx.fill();
 
-        // Taillights
+        // Prominent Taillights for better visibility at a distance
         ctx.shadowColor = '#ff0000';
-        ctx.shadowBlur = 10 * scale;
+        ctx.shadowBlur = 15 * scale;
         ctx.fillStyle = '#ff0000';
-        ctx.fillRect(-carWidth / 2 + 4 * scale, carHeight / 2 - 8 * scale, 10 * scale, 3 * scale);
-        ctx.fillRect(carWidth / 2 - 14 * scale, carHeight / 2 - 8 * scale, 10 * scale, 3 * scale);
+        ctx.fillRect(-carWidth / 2 + 4 * scale, carHeight / 2 - 8 * scale, Math.max(4, 10 * scale), Math.max(2, 4 * scale));
+        ctx.fillRect(carWidth / 2 - 14 * scale, carHeight / 2 - 8 * scale, Math.max(4, 10 * scale), Math.max(2, 4 * scale));
 
         ctx.restore();
     }
@@ -386,23 +345,9 @@ const playerCar = new PlayerCar();
 const enemyCar = new EnemyCar();
 
 /**
- * AABB Collision Detection utility
- */
-function checkCollision(rect1, rect2) {
-    return (
-        rect1.x < rect2.x + rect2.width &&
-        rect1.x + rect1.width > rect2.x &&
-        rect1.y < rect2.y + rect2.height &&
-        rect1.y + rect1.height > rect2.y
-    );
-}
-
-/**
  * Standard 60 FPS Game Loop
  */
 function gameLoop() {
-    if (isGameOver) return;
-
     // Clear canvas
     ctx.fillStyle = '#0b0b16';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -411,33 +356,13 @@ function gameLoop() {
     road.update();
     road.draw(ctx, canvas.width, canvas.height);
 
-    // Update and render the single enemy car
+    // Update and render the enemy car
     enemyCar.update();
     enemyCar.draw(ctx, canvas.width, canvas.height);
 
     // Update and render the player car
     playerCar.update(canvas.width, canvas.height);
     playerCar.draw(ctx);
-
-    // Check collision using AABB bounding boxes
-    const playerBounds = playerCar.getBounds();
-    const enemyBounds = enemyCar.getBounds(canvas.width, canvas.height);
-
-    if (checkCollision(playerBounds, enemyBounds)) {
-        isGameOver = true;
-
-        // Render "GAME OVER" in large glowing red text at the center
-        ctx.save();
-        ctx.font = 'bold 64px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillStyle = '#ff0033';
-        ctx.shadowColor = '#ff0033';
-        ctx.shadowBlur = 25;
-        ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2);
-        ctx.restore();
-        return; // Stops the game loop execution
-    }
 
     // Maintain 60 FPS
     requestAnimationFrame(gameLoop);
