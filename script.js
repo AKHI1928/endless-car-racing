@@ -1,5 +1,5 @@
 /**
- * Lucky Nitro - Cyberpunk Road with Perspective Enemy Cars
+ * Lucky Nitro - Cyberpunk Road with Single Perspective Enemy Car
  * script.js
  */
 
@@ -260,7 +260,7 @@ class PlayerCar {
 }
 
 /**
- * Enemy Car Class using Perspective Scaling and 3 Lanes
+ * Enemy Car Class using Perspective Scaling in the Center Lane
  */
 class EnemyCar {
     constructor() {
@@ -268,18 +268,15 @@ class EnemyCar {
     }
 
     reset() {
-        // Lanes: 0 = Left, 1 = Center, 2 = Right
-        this.lane = Math.floor(Math.random() * 3);
-        
-        // Start at horizon
-        this.progress = 0; // 0 at horizon (top), 1 at bottom of screen
-        this.speed = 0.012; // Speed at which enemy approaches
+        // Start near the horizon (progress = 0)
+        this.progress = 0;
+        this.speed = 0.012; // Continuous approaching speed
     }
 
     update() {
         this.progress += this.speed;
-        // Recycle enemy car once it passes the bottom of the screen
-        if (this.progress > 1.05) {
+        // When it reaches the bottom, restart from the horizon
+        if (this.progress > 1.0) {
             this.reset();
         }
     }
@@ -299,15 +296,13 @@ class EnemyCar {
         const currentRoadWidth = topRoadWidth + (bottomRoadWidth - topRoadWidth) * this.progress;
         const roadLeft = centerX - currentRoadWidth / 2;
 
-        // Determine lane X offset factor within the road (-1 for left, 0 for center, 1 for right)
-        // Three lanes distributed across the road width
-        const laneOffsets = [0.2, 0.5, 0.8];
-        const x = roadLeft + currentRoadWidth * laneOffsets[this.lane];
+        // Place exactly in the center lane
+        const x = roadLeft + currentRoadWidth * 0.5;
 
         // Scale car dimensions based on perspective progress (smaller at horizon, larger at bottom)
         const baseWidth = 65;
         const baseHeight = 100;
-        const scale = 0.15 + 0.85 * this.progress; // Perspective growth factor
+        const scale = 0.15 + 0.85 * this.progress;
 
         const carWidth = baseWidth * scale;
         const carHeight = baseHeight * scale;
@@ -315,7 +310,7 @@ class EnemyCar {
         ctx.save();
         ctx.translate(x, y);
 
-        // Draw Enemy Car Body (Cyberpunk Orange/Yellow palette to contrast player)
+        // Draw Enemy Car Body (Cyberpunk Orange/Yellow palette)
         ctx.fillStyle = '#ffaa00';
         ctx.shadowColor = '#ffaa00';
         ctx.shadowBlur = 8 * scale;
@@ -340,7 +335,7 @@ class EnemyCar {
         ctx.closePath();
         ctx.fill();
 
-        // Enemy Headlights / Taillights (facing away from player, so glowing red rear lights visible)
+        // Taillights (facing away from player)
         ctx.shadowColor = '#ff0000';
         ctx.shadowBlur = 10 * scale;
         ctx.fillStyle = '#ff0000';
@@ -354,13 +349,7 @@ class EnemyCar {
 // Initialize instances
 const road = new CyberpunkRoad();
 const playerCar = new PlayerCar();
-
-// Spawn a small pool of enemy cars
-const enemies = [new EnemyCar(), new EnemyCar(), new EnemyCar()];
-// Stagger initial progress so they don't all spawn at once
-enemies[0].progress = 0.0;
-enemies[1].progress = 0.35;
-enemies[2].progress = 0.7;
+const enemyCar = new EnemyCar();
 
 /**
  * Standard 60 FPS Game Loop
@@ -374,11 +363,9 @@ function gameLoop() {
     road.update();
     road.draw(ctx, canvas.width, canvas.height);
 
-    // Update and render enemy cars
-    for (let enemy of enemies) {
-        enemy.update();
-        enemy.draw(ctx, canvas.width, canvas.height);
-    }
+    // Update and render the single enemy car
+    enemyCar.update();
+    enemyCar.draw(ctx, canvas.width, canvas.height);
 
     // Update and render the player car
     playerCar.update(canvas.width, canvas.height);
