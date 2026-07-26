@@ -1,5 +1,5 @@
 /**
- * Lucky Nitro - Cyberpunk Road with Perspective
+ * Lucky Nitro - Cyberpunk Road with Player Car
  * script.js
  */
 
@@ -77,7 +77,6 @@ class CyberpunkRoad {
         ctx.restore();
 
         // Draw animated dashed center lane following the perspective
-        // We simulate perspective by dividing the road height into segments with varying dash sizes
         ctx.save();
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 3;
@@ -85,21 +84,14 @@ class CyberpunkRoad {
         const totalSegments = 20;
         const segmentHeight = (bottomY - horizonY) / totalSegments;
         
-        // Loop through segments to create a perspective scaling effect for dashes
         for (let i = 0; i < totalSegments; i++) {
-            // Apply scrolling offset mapped across segments
             let progress = (i + (this.offsetY / 60)) % totalSegments;
             
-            // Skip alternating segments to create the dashed look
             if (Math.floor(progress) % 2 === 0) {
                 let y1 = horizonY + progress * segmentHeight;
-                let y2 = horizonY + (progress + 0.6) * segmentHeight; // Dash length proportion
+                let y2 = horizonY + (progress + 0.6) * segmentHeight;
 
                 if (y2 > bottomY) y2 = bottomY;
-
-                // Interpolate X positions based on Y depth for perspective center line
-                let factor1 = (y1 - horizonY) / (bottomY - horizonY);
-                let factor2 = (y2 - horizonY) / (bottomY - horizonY);
 
                 let x1 = centerX;
                 let x2 = centerX;
@@ -114,8 +106,169 @@ class CyberpunkRoad {
     }
 }
 
-// Initialize the road instance
+/**
+ * Player Car Controller & Renderer using Canvas primitives
+ */
+class PlayerCar {
+    constructor() {
+        this.width = 70;
+        this.height = 110;
+        this.x = 0; // Will be initialized based on canvas width
+        this.y = 0;
+        
+        this.vx = 0;
+        this.acceleration = 0.8;
+        this.friction = 0.85;
+        this.maxSpeed = 10;
+
+        // Input states
+        this.keys = {
+            left: false,
+            right: false
+        };
+
+        this.setupListeners();
+    }
+
+    setupListeners() {
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+                this.keys.left = true;
+            }
+            if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+                this.keys.right = true;
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+                this.keys.left = false;
+            }
+            if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+                this.keys.right = false;
+            }
+        });
+    }
+
+    update(canvasWidth, canvasHeight) {
+        // Position car near the bottom center of the road
+        this.y = canvasHeight - this.height - 30;
+
+        // Handle acceleration based on input
+        if (this.keys.left) {
+            this.vx -= this.acceleration;
+        } else if (this.keys.right) {
+            this.vx += this.acceleration;
+        } else {
+            this.vx *= this.friction; // Apply friction when no keys are pressed
+        }
+
+        // Clamp velocity to max speed
+        if (this.vx > this.maxSpeed) this.vx = this.maxSpeed;
+        if (this.vx < -this.maxSpeed) this.vx = -this.maxSpeed;
+
+        // Stop tiny floating point drift
+        if (Math.abs(this.vx) < 0.05) this.vx = 0;
+
+        // Update position
+        this.x += this.vx;
+
+        // Keep the car strictly inside the road boundaries
+        const bottomRoadWidth = canvasWidth * 0.55;
+        const roadLeft = (canvasWidth - bottomRoadWidth) / 2;
+        const roadRight = roadLeft + bottomRoadWidth;
+
+        const margin = 15; // Padding from the neon edges
+        if (this.x - this.width / 2 < roadLeft + margin) {
+            this.x = roadLeft + margin + this.width / 2;
+            this.vx = 0;
+        }
+        if (this.x + this.width / 2 > roadRight - margin) {
+            this.x = roadRight - margin - this.width / 2;
+            this.vx = 0;
+        }
+    }
+
+    draw(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+
+        // Slight tilt effect when steering
+        const tilt = this.vx * 0.015;
+        ctx.rotate(tilt);
+
+        // Car Body (Modern Neon Sports Car Shape)
+        ctx.fillStyle = '#ff0055'; // Vibrant cyberpunk magenta body
+        ctx.shadowColor = '#ff0055';
+        ctx.shadowBlur = 10;
+
+        ctx.beginPath();
+        // Sleek aerodynamic body polygon relative to center
+        ctx.moveTo(-this.width / 2 + 10, 20);
+        ctx.lineTo(-this.width / 2, -20);
+        ctx.lineTo(-this.width / 4, -this.height / 2);
+        ctx.lineTo(this.width / 4, -this.height / 2);
+        ctx.lineTo(this.width / 2, -20);
+        ctx.lineTo(this.width / 2 - 10, 20);
+        ctx.closePath();
+        ctx.fill();
+
+        // Hood & Front Nose refinement
+        ctx.fillStyle = '#b3003b';
+        ctx.beginPath();
+        ctx.moveTo(-this.width / 4, -this.height / 2);
+        ctx.lineTo(this.width / 4, -this.height / 2);
+        ctx.lineTo(this.width / 3, -10);
+        ctx.lineTo(-this.width / 3, -10);
+        ctx.closePath();
+        ctx.fill();
+
+        // Windshield (Dark tinted glass with neon reflection)
+        ctx.fillStyle = '#0b0b16';
+        ctx.beginPath();
+        ctx.moveTo(-this.width / 4 + 4, -this.height / 2 + 12);
+        ctx.lineTo(this.width / 4 - 4, -this.height / 2 + 12);
+        ctx.lineTo(this.width / 3 - 4, -5);
+        ctx.lineTo(-this.width / 3 + 4, -5);
+        ctx.closePath();
+        ctx.fill();
+
+        // Glowing Headlights
+        ctx.shadowColor = '#00f0ff';
+        ctx.shadowBlur = 15;
+        ctx.fillStyle = '#00f0ff';
+        ctx.fillRect(-this.width / 2 + 6, -this.height / 2 + 2, 12, 4);
+        ctx.fillRect(this.width / 2 - 18, -this.height / 2 + 2, 12, 4);
+
+        // Glowing Taillights
+        ctx.shadowColor = '#ff3300';
+        ctx.shadowBlur = 12;
+        ctx.fillStyle = '#ff3300';
+        ctx.fillRect(-this.width / 2 + 4, this.height / 2 - 15, 14, 4);
+        ctx.fillRect(this.width / 2 - 18, this.height / 2 - 15, 14, 4);
+
+        // Wheels
+        ctx.fillStyle = '#111111';
+        ctx.shadowBlur = 0;
+        // Front Left
+        ctx.fillRect(-this.width / 2 - 4, -this.height / 3, 6, 22);
+        // Front Right
+        ctx.fillRect(this.width / 2 - 2, -this.height / 3, 6, 22);
+        // Rear Left
+        ctx.fillRect(-this.width / 2 - 4, this.height / 4, 6, 26);
+        // Rear Right
+        ctx.fillRect(this.width / 2 - 2, this.height / 4, 6, 26);
+
+        ctx.restore();
+    }
+}
+
+// Initialize instances
 const road = new CyberpunkRoad();
+const playerCar = new PlayerCar();
+
+// Initialize player X position to center of screen once loaded
+playerCar.x = canvas.width / 2;
 
 /**
  * Standard 60 FPS Game Loop
@@ -128,6 +281,10 @@ function gameLoop() {
     // Update and render the perspective road
     road.update();
     road.draw(ctx, canvas.width, canvas.height);
+
+    // Update and render the player car
+    playerCar.update(canvas.width, canvas.height);
+    playerCar.draw(ctx);
 
     // Maintain 60 FPS
     requestAnimationFrame(gameLoop);
