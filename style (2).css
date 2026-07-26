@@ -1,0 +1,36 @@
+/* ==========================================================================
+   Lucky Nitro — Base Styles
+   Fullscreen, responsive, dark cyberpunk canvas foundation.
+   ========================================================================== */
+
+/* Reset default browser spacing so the canvas can occupy the full viewport */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden; /* No scrollbars — this is a fullscreen game */
+  background-color: #05050a; /* Fallback color behind the canvas */
+}
+
+body {
+  /* Prevent touch gestures (pinch-zoom, pull-to-refresh) from interfering
+     with gameplay on mobile devices */
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* The game canvas fills the entire viewport. Actual pixel dimensions are
+   set dynamically in JavaScript to account for devicePixelRatio. */
+#gameCanvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  background: #05050a;
+}
