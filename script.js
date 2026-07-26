@@ -1,5 +1,5 @@
 /**
- * Lucky Nitro - Cyberpunk Road with Player Car
+ * Lucky Nitro - Cyberpunk Road with Player Car Fixed
  * script.js
  */
 
@@ -113,7 +113,7 @@ class PlayerCar {
     constructor() {
         this.width = 70;
         this.height = 110;
-        this.x = 0; // Will be initialized based on canvas width
+        this.x = canvas.width / 2; // Initialize immediately to screen center
         this.y = 0;
         
         this.vx = 0;
@@ -154,6 +154,11 @@ class PlayerCar {
         // Position car near the bottom center of the road
         this.y = canvasHeight - this.height - 30;
 
+        // Ensure x is valid if resized
+        if (isNaN(this.x)) {
+            this.x = canvasWidth / 2;
+        }
+
         // Handle acceleration based on input
         if (this.keys.left) {
             this.vx -= this.acceleration;
@@ -173,7 +178,7 @@ class PlayerCar {
         // Update position
         this.x += this.vx;
 
-        // Keep the car strictly inside the road boundaries
+        // Keep the car strictly inside the road boundaries at the bottom width
         const bottomRoadWidth = canvasWidth * 0.55;
         const roadLeft = (canvasWidth - bottomRoadWidth) / 2;
         const roadRight = roadLeft + bottomRoadWidth;
@@ -203,7 +208,6 @@ class PlayerCar {
         ctx.shadowBlur = 10;
 
         ctx.beginPath();
-        // Sleek aerodynamic body polygon relative to center
         ctx.moveTo(-this.width / 2 + 10, 20);
         ctx.lineTo(-this.width / 2, -20);
         ctx.lineTo(-this.width / 4, -this.height / 2);
@@ -250,13 +254,9 @@ class PlayerCar {
         // Wheels
         ctx.fillStyle = '#111111';
         ctx.shadowBlur = 0;
-        // Front Left
         ctx.fillRect(-this.width / 2 - 4, -this.height / 3, 6, 22);
-        // Front Right
         ctx.fillRect(this.width / 2 - 2, -this.height / 3, 6, 22);
-        // Rear Left
         ctx.fillRect(-this.width / 2 - 4, this.height / 4, 6, 26);
-        // Rear Right
         ctx.fillRect(this.width / 2 - 2, this.height / 4, 6, 26);
 
         ctx.restore();
@@ -266,9 +266,6 @@ class PlayerCar {
 // Initialize instances
 const road = new CyberpunkRoad();
 const playerCar = new PlayerCar();
-
-// Initialize player X position to center of screen once loaded
-playerCar.x = canvas.width / 2;
 
 /**
  * Standard 60 FPS Game Loop
