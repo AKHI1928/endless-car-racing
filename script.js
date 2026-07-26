@@ -1,5 +1,5 @@
 /**
- * Lucky Nitro - Cyberpunk Road with Player Car Fixed
+ * Lucky Nitro - Cyberpunk Road with Centered Player Car Spawn
  * script.js
  */
 
@@ -113,7 +113,7 @@ class PlayerCar {
     constructor() {
         this.width = 70;
         this.height = 110;
-        this.x = canvas.width / 2; // Initialize immediately to screen center
+        this.x = canvas.width / 2; // Spawn exactly in the center lane
         this.y = 0;
         
         this.vx = 0;
@@ -154,7 +154,7 @@ class PlayerCar {
         // Position car near the bottom center of the road
         this.y = canvasHeight - this.height - 30;
 
-        // Ensure x is valid if resized
+        // Keep centered horizontally if uninitialized or reset
         if (isNaN(this.x)) {
             this.x = canvasWidth / 2;
         }
