@@ -1,5 +1,5 @@
 /**
- * Lucky Nitro - Cyberpunk Road with Accurate AABB Collision Detection & Game Over
+ * Lucky Nitro - Cyberpunk Road with Score, Best Score (localStorage), and Collision Detection
  * script.js
  */
 
@@ -7,8 +7,10 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-// Game state flag
+// Game state flags & scoring variables
 let isGameOver = false;
+let score = 0;
+let bestScore = parseInt(localStorage.getItem('luckyNitroBestScore')) || 0;
 
 // Handle canvas resizing to match window dimensions
 function resizeCanvas() {
@@ -419,15 +421,37 @@ function gameLoop() {
     playerCar.update(canvas.width, canvas.height);
     playerCar.draw(ctx);
 
+    // Increment score while game is running
+    score += 1;
+
+    // Display Score and Best Score in the top-right corner
+    ctx.save();
+    ctx.font = 'bold 20px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#00f0ff';
+    ctx.shadowColor = '#00f0ff';
+    ctx.shadowBlur = 8;
+    ctx.fillText(`SCORE: ${Math.floor(score / 10)}`, canvas.width - 30, 40);
+    ctx.fillText(`BEST: ${Math.floor(bestScore / 10)}`, canvas.width - 30, 70);
+    ctx.restore();
+
     // Accurate AABB collision check every frame
     const playerBounds = playerCar.getBounds();
     const enemyBounds = enemyCar.getBounds(canvas.width, canvas.height);
 
     if (checkCollision(playerBounds, enemyBounds)) {
         isGameOver = true;
+
+        // Check and update best score via localStorage
+        const finalScoreVal = Math.floor(score / 10);
+        const bestScoreVal = Math.floor(bestScore / 10);
+        if (finalScoreVal > bestScoreVal) {
+            bestScore = score;
+            localStorage.setItem('luckyNitroBestScore', score);
+        }
     }
 
-    // If game over occurred, display message overlay
+    // If game over occurred, display message overlay and final scores
     if (isGameOver) {
         ctx.save();
         ctx.font = 'bold 64px sans-serif';
