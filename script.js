@@ -1,5 +1,5 @@
 /**
- * Lucky Nitro - Cyberpunk Road with PNG Sprite Support & Fallback
+ * Lucky Nitro - Cyberpunk Road with Live Score, Best Score, and PNG Sprites
  * script.js
  */
 
@@ -228,7 +228,6 @@ class PlayerCar {
             ctx.drawImage(playerImage, -this.width / 2, -this.height / 2, this.width, this.height);
         } else {
             // Fallback Canvas drawing
-            // Car Body
             ctx.fillStyle = '#ff0055';
             ctx.shadowColor = '#ff0055';
             ctx.shadowBlur = 10;
@@ -441,7 +440,7 @@ function gameLoop() {
     playerCar.update(canvas.width, canvas.height);
     playerCar.draw(ctx);
 
-    // Increment score while game is running
+    // Increment live score every frame while game is running
     score += 1;
 
     // Display Score and Best Score in the top-right corner
@@ -462,16 +461,14 @@ function gameLoop() {
     if (checkCollision(playerBounds, enemyBounds)) {
         isGameOver = true;
 
-        // Check and update best score via localStorage
-        const finalScoreVal = Math.floor(score / 10);
-        const bestScoreVal = Math.floor(bestScore / 10);
-        if (finalScoreVal > bestScoreVal) {
+        // Save Best Score using localStorage
+        if (score > bestScore) {
             bestScore = score;
-            localStorage.setItem('luckyNitroBestScore', score);
+            localStorage.setItem('luckyNitroBestScore', bestScore);
         }
     }
 
-    // If game over occurred, display message overlay and final scores
+    // If game over occurred, display message overlay
     if (isGameOver) {
         ctx.save();
         ctx.font = 'bold 64px sans-serif';
