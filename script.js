@@ -1,5 +1,5 @@
 /**
- * Lucky Nitro - Cyberpunk Road with Professional EnemyManager Architecture
+ * Lucky Nitro - Cyberpunk Road with Horizon Clipping & Professional EnemyManager
  * script.js
  */
 
@@ -290,12 +290,12 @@ class PlayerCar {
 }
 
 /**
- * Individual Enemy Car Class
+ * Individual Enemy Car Class with Horizon Visibility Clipping
  */
 class EnemyCar {
     constructor(lane, progress, speed) {
         this.lane = lane;           // 0: Left, 1: Center, 2: Right
-        this.progress = progress;   // Progress along the perspective road (negative = above horizon)
+        this.progress = progress;   // Progress along road (negative = above horizon)
         this.speed = speed;         // Natural movement speed
     }
 
@@ -315,7 +315,6 @@ class EnemyCar {
         const currentRoadWidth = topRoadWidth + (bottomRoadWidth - topRoadWidth) * this.progress;
         const roadLeft = centerX - currentRoadWidth / 2;
 
-        // Lane horizontal multipliers: 0.25 (left), 0.50 (center), 0.75 (right)
         const laneMultipliers = [0.25, 0.50, 0.75];
         const x = roadLeft + currentRoadWidth * laneMultipliers[this.lane];
 
@@ -335,6 +334,10 @@ class EnemyCar {
     }
 
     draw(ctx, width, height) {
+        // Requirement 1 & 2: Enemy cars must spawn ABOVE the horizon but remain INVISIBLE.
+        // Only render/draw if progress >= 0 (i.e. at or below the horizon line).
+        if (this.progress < 0) return;
+
         const bounds = this.getBounds(width, height);
 
         ctx.save();
@@ -344,7 +347,7 @@ class EnemyCar {
             ctx.drawImage(enemyImage, -bounds.width / 2, -bounds.height / 2, bounds.width, bounds.height);
         } else {
             // Fallback Canvas drawing
-            const scale = 0.30 + 0.70 * Math.max(0, this.progress);
+            const scale = 0.30 + 0.70 * this.progress;
             ctx.fillStyle = '#ffaa00';
             ctx.shadowColor = '#ffaa00';
             ctx.shadowBlur = 12 * scale;
@@ -393,7 +396,7 @@ class EnemyManager {
 
     init() {
         this.enemies = [];
-        // Stagger initial enemies cleanly above and along the road to guarantee 3-5 active cars instantly
+        // Stagger initial enemies cleanly above and along the road to guarantee active cars emerging naturally
         const initialProgressValues = [-0.1, -0.45, -0.8, -1.15, -1.5];
         const lanes = [0, 1, 2, 0, 2];
 
@@ -416,7 +419,6 @@ class EnemyManager {
             }
         }
 
-        // Ensure no overlapping cars in the same lane near spawn zone
         this.preventOverlaps();
     }
 
@@ -424,7 +426,6 @@ class EnemyManager {
         const lanes = [0, 1, 2];
         let chosenLane = lanes[Math.floor(Math.random() * lanes.length)];
         
-        // Find highest negative progress currently among enemies in this lane to maintain vertical separation
         let minProgress = -0.2;
         for (let other of this.enemies) {
             if (other !== enemy && other.lane === chosenLane) {
@@ -434,7 +435,6 @@ class EnemyManager {
             }
         }
 
-        // Place new enemy well above the existing traffic in that lane
         enemy.lane = chosenLane;
         enemy.progress = minProgress - (0.35 + Math.random() * 0.4);
         enemy.speed = 0.007 + Math.random() * 0.006;
@@ -447,7 +447,6 @@ class EnemyManager {
                 let e2 = this.enemies[j];
 
                 if (e1.lane === e2.lane) {
-                    // If they are too close vertically, push the higher one further back
                     if (Math.abs(e1.progress - e2.progress) < 0.3) {
                         if (e1.progress < e2.progress) {
                             e2.progress = e1.progress - 0.35;
@@ -468,6 +467,9 @@ class EnemyManager {
 
     checkCollisions(playerBounds, width, height) {
         for (let i = 0; i < this.enemies.length; i++) {
+            // Only check collisions for cars that have crossed the horizon and are visible on screen
+            if (this.enemies[i].progress < 0) continue;
+
             let enemyBounds = this.enemies[i].getBounds(width, height);
             if (
                 playerBounds.x < enemyBounds.x + enemyBounds.width &&
@@ -528,7 +530,7 @@ function gameLoop() {
     ctx.fillText(`BEST: ${Math.floor(bestScore / 10)}`, canvas.width - 30, 70);
     ctx.restore();
 
-    // Check collisions with all enemies using EnemyManager
+    // Check collisions with all active visible enemies using EnemyManager
     if (!isGameOver) {
         const playerBounds = playerCar.getBounds();
         if (enemyManager.checkCollisions(playerBounds, canvas.width, canvas.height)) {
