@@ -1,5 +1,5 @@
 /**
- * Lucky Nitro - Cyberpunk Road with Multiple Enemies, Lanes, Speeds, and Overlap Prevention
+ * Lucky Nitro - Cyberpunk Road with 5 Enemy Cars, Random Lanes, and Vertical Spacing
  * script.js
  */
 
@@ -92,7 +92,7 @@ class CyberpunkRoad {
         ctx.stroke();
         ctx.restore();
 
-        // Draw animated dashed center lane and lane dividers following the perspective
+        // Draw animated dashed center lane following the perspective
         ctx.save();
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 3;
@@ -290,25 +290,30 @@ class PlayerCar {
 }
 
 /**
- * Enemy Car Class with Lanes, Speeds, and PNG Sprite Support
+ * Enemy Car Class supporting multiple instances, random lanes, speeds, and vertical offsets
  */
 class EnemyCar {
-    constructor(lane = 1, initialProgress = 0) {
-        this.lane = lane; // 0: Left, 1: Center, 2: Right
-        this.progress = initialProgress;
-        this.speed = 0.008 + Math.random() * 0.008; // Slightly different speed
+    constructor(initialProgress = 0) {
+        this.reset(initialProgress);
     }
 
-    reset(assignedLane = 1, startProgress = 0) {
-        this.lane = assignedLane;
-        this.progress = startProgress;
+    reset(initialProgress = 0) {
+        // Random lane selection: 0 = Left, 1 = Center, 2 = Right
+        const lanes = [0, 1, 2];
+        this.lane = lanes[Math.floor(Math.random() * lanes.length)];
+        
+        // Progress along the perspective road (0 = horizon, 1 = bottom screen)
+        this.progress = initialProgress;
+        
+        // Slightly different speed for each enemy
         this.speed = 0.008 + Math.random() * 0.008;
     }
 
     update() {
         this.progress += this.speed;
+        // When enemy leaves the screen (progress > 1.0), respawn at the horizon
         if (this.progress > 1.0) {
-            this.reset(Math.floor(Math.random() * 3), -0.2 - Math.random() * 0.4);
+            this.reset(0);
         }
     }
 
@@ -325,9 +330,9 @@ class EnemyCar {
         const currentRoadWidth = topRoadWidth + (bottomRoadWidth - topRoadWidth) * this.progress;
         const roadLeft = centerX - currentRoadWidth / 2;
 
-        // Map lanes: 0 = Left (25%), 1 = Center (50%), 2 = Right (75%) offsets across road width
-        const laneOffsets = [0.25, 0.5, 0.75];
-        const x = roadLeft + currentRoadWidth * laneOffsets[this.lane];
+        // Lane horizontal multipliers: 0.25 (left), 0.5 (center), 0.75 (right)
+        const laneMultipliers = [0.25, 0.50, 0.75];
+        const x = roadLeft + currentRoadWidth * laneMultipliers[this.lane];
 
         const baseWidth = 65;
         const baseHeight = 100;
@@ -356,8 +361,8 @@ class EnemyCar {
         const currentRoadWidth = topRoadWidth + (bottomRoadWidth - topRoadWidth) * this.progress;
         const roadLeft = centerX - currentRoadWidth / 2;
 
-        const laneOffsets = [0.25, 0.5, 0.75];
-        const x = roadLeft + currentRoadWidth * laneOffsets[this.lane];
+        const laneMultipliers = [0.25, 0.50, 0.75];
+        const x = roadLeft + currentRoadWidth * laneMultipliers[this.lane];
 
         const baseWidth = 65;
         const baseHeight = 100;
@@ -397,7 +402,7 @@ class EnemyCar {
             ctx.closePath();
             ctx.fill();
 
-            // Prominent Taillights for better visibility at a distance
+            // Taillights
             ctx.shadowColor = '#ff0000';
             ctx.shadowBlur = 15 * scale;
             ctx.fillStyle = '#ff0000';
@@ -413,14 +418,12 @@ class EnemyCar {
 const road = new CyberpunkRoad();
 const playerCar = new PlayerCar();
 
-// Initialize 5 enemy cars with staggered initial progress and non-overlapping lane spawning
+// Create an array of 5 EnemyCar objects with different vertical starting positions (spread out)
 const enemies = [];
-const lanes = [0, 1, 2];
 for (let i = 0; i < 5; i++) {
-    // Pick unique or distributed lanes and stagger progress so they don't stack on top of each other
-    let lane = lanes[i % lanes.length];
-    let initialProgress = -0.2 - (i * 0.25);
-    enemies.push(new EnemyCar(lane, initialProgress));
+    // Spread them out vertically from progress 0 down to -1.2 so they appear staggered
+    const initialProgress = - (i * 0.25);
+    enemies.push(new EnemyCar(initialProgress));
 }
 
 /**
@@ -449,20 +452,9 @@ function gameLoop() {
     road.update();
     road.draw(ctx, canvas.width, canvas.height);
 
-    // Update, prevent spawn overlapping, and render all 5 enemy cars
+    // Update and draw ALL enemies every frame
     for (let i = 0; i < enemies.length; i++) {
         enemies[i].update();
-
-        // Prevent enemies from spawning on top of each other in the same lane
-        for (let j = 0; j < enemies.length; j++) {
-            if (i !== j && enemies[i].lane === enemies[j].lane) {
-                // If they are close vertically and near the horizon spawn point, adjust one
-                if (Math.abs(enemies[i].progress - enemies[j].progress) < 0.25) {
-                    enemies[i].progress -= 0.15;
-                }
-            }
-        }
-
         enemies[i].draw(ctx, canvas.width, canvas.height);
     }
 
@@ -470,7 +462,7 @@ function gameLoop() {
     playerCar.update(canvas.width, canvas.height);
     playerCar.draw(ctx);
 
-    // Increment live score every frame while game is running
+    // Increment score while game is running
     score += 1;
 
     // Display Score and Best Score in the top-right corner
@@ -484,7 +476,7 @@ function gameLoop() {
     ctx.fillText(`BEST: ${Math.floor(bestScore / 10)}`, canvas.width - 30, 70);
     ctx.restore();
 
-    // Accurate AABB collision check every frame against all enemies
+    // Collision detection must work with every enemy
     const playerBounds = playerCar.getBounds();
     for (let i = 0; i < enemies.length; i++) {
         const enemyBounds = enemies[i].getBounds(canvas.width, canvas.height);
