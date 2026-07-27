@@ -1,5 +1,5 @@
 /**
- * Lucky Nitro - Cyberpunk Road with Score, Best Score (localStorage), and Collision Detection
+ * Lucky Nitro - Cyberpunk Road with PNG Sprite Support & Fallback
  * script.js
  */
 
@@ -11,6 +11,17 @@ const ctx = canvas.getContext("2d");
 let isGameOver = false;
 let score = 0;
 let bestScore = parseInt(localStorage.getItem('luckyNitroBestScore')) || 0;
+
+// Load images with fallback support
+const playerImage = new Image();
+playerImage.src = 'assets/player.png';
+let playerImageLoaded = false;
+playerImage.onload = () => { playerImageLoaded = true; };
+
+const enemyImage = new Image();
+enemyImage.src = 'assets/enemy.png';
+let enemyImageLoaded = false;
+enemyImage.onload = () => { enemyImageLoaded = true; };
 
 // Handle canvas resizing to match window dimensions
 function resizeCanvas() {
@@ -112,7 +123,7 @@ class CyberpunkRoad {
 }
 
 /**
- * Player Car Controller & Renderer using Canvas primitives
+ * Player Car Controller & Renderer with PNG Sprite Support & Fallback
  */
 class PlayerCar {
     constructor() {
@@ -213,69 +224,74 @@ class PlayerCar {
         const tilt = this.vx * 0.015;
         ctx.rotate(tilt);
 
-        // Car Body
-        ctx.fillStyle = '#ff0055';
-        ctx.shadowColor = '#ff0055';
-        ctx.shadowBlur = 10;
+        if (playerImageLoaded) {
+            ctx.drawImage(playerImage, -this.width / 2, -this.height / 2, this.width, this.height);
+        } else {
+            // Fallback Canvas drawing
+            // Car Body
+            ctx.fillStyle = '#ff0055';
+            ctx.shadowColor = '#ff0055';
+            ctx.shadowBlur = 10;
 
-        ctx.beginPath();
-        ctx.moveTo(-this.width / 2 + 10, 20);
-        ctx.lineTo(-this.width / 2, -20);
-        ctx.lineTo(-this.width / 4, -this.height / 2);
-        ctx.lineTo(this.width / 4, -this.height / 2);
-        ctx.lineTo(this.width / 2, -20);
-        ctx.lineTo(this.width / 2 - 10, 20);
-        ctx.closePath();
-        ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(-this.width / 2 + 10, 20);
+            ctx.lineTo(-this.width / 2, -20);
+            ctx.lineTo(-this.width / 4, -this.height / 2);
+            ctx.lineTo(this.width / 4, -this.height / 2);
+            ctx.lineTo(this.width / 2, -20);
+            ctx.lineTo(this.width / 2 - 10, 20);
+            ctx.closePath();
+            ctx.fill();
 
-        // Hood & Front Nose
-        ctx.fillStyle = '#b3003b';
-        ctx.beginPath();
-        ctx.moveTo(-this.width / 4, -this.height / 2);
-        ctx.lineTo(this.width / 4, -this.height / 2);
-        ctx.lineTo(this.width / 3, -10);
-        ctx.lineTo(-this.width / 3, -10);
-        ctx.closePath();
-        ctx.fill();
+            // Hood & Front Nose
+            ctx.fillStyle = '#b3003b';
+            ctx.beginPath();
+            ctx.moveTo(-this.width / 4, -this.height / 2);
+            ctx.lineTo(this.width / 4, -this.height / 2);
+            ctx.lineTo(this.width / 3, -10);
+            ctx.lineTo(-this.width / 3, -10);
+            ctx.closePath();
+            ctx.fill();
 
-        // Windshield
-        ctx.fillStyle = '#0b0b16';
-        ctx.beginPath();
-        ctx.moveTo(-this.width / 4 + 4, -this.height / 2 + 12);
-        ctx.lineTo(this.width / 4 - 4, -this.height / 2 + 12);
-        ctx.lineTo(this.width / 3 - 4, -5);
-        ctx.lineTo(-this.width / 3 + 4, -5);
-        ctx.closePath();
-        ctx.fill();
+            // Windshield
+            ctx.fillStyle = '#0b0b16';
+            ctx.beginPath();
+            ctx.moveTo(-this.width / 4 + 4, -this.height / 2 + 12);
+            ctx.lineTo(this.width / 4 - 4, -this.height / 2 + 12);
+            ctx.lineTo(this.width / 3 - 4, -5);
+            ctx.lineTo(-this.width / 3 + 4, -5);
+            ctx.closePath();
+            ctx.fill();
 
-        // Headlights
-        ctx.shadowColor = '#00f0ff';
-        ctx.shadowBlur = 15;
-        ctx.fillStyle = '#00f0ff';
-        ctx.fillRect(-this.width / 2 + 6, -this.height / 2 + 2, 12, 4);
-        ctx.fillRect(this.width / 2 - 18, -this.height / 2 + 2, 12, 4);
+            // Headlights
+            ctx.shadowColor = '#00f0ff';
+            ctx.shadowBlur = 15;
+            ctx.fillStyle = '#00f0ff';
+            ctx.fillRect(-this.width / 2 + 6, -this.height / 2 + 2, 12, 4);
+            ctx.fillRect(this.width / 2 - 18, -this.height / 2 + 2, 12, 4);
 
-        // Taillights
-        ctx.shadowColor = '#ff3300';
-        ctx.shadowBlur = 12;
-        ctx.fillStyle = '#ff3300';
-        ctx.fillRect(-this.width / 2 + 4, this.height / 2 - 15, 14, 4);
-        ctx.fillRect(this.width / 2 - 18, this.height / 2 - 15, 14, 4);
+            // Taillights
+            ctx.shadowColor = '#ff3300';
+            ctx.shadowBlur = 12;
+            ctx.fillStyle = '#ff3300';
+            ctx.fillRect(-this.width / 2 + 4, this.height / 2 - 15, 14, 4);
+            ctx.fillRect(this.width / 2 - 18, this.height / 2 - 15, 14, 4);
 
-        // Wheels
-        ctx.fillStyle = '#111111';
-        ctx.shadowBlur = 0;
-        ctx.fillRect(-this.width / 2 - 4, -this.height / 3, 6, 22);
-        ctx.fillRect(this.width / 2 - 2, -this.height / 3, 6, 22);
-        ctx.fillRect(-this.width / 2 - 4, this.height / 4, 6, 26);
-        ctx.fillRect(this.width / 2 - 2, this.height / 4, 6, 26);
+            // Wheels
+            ctx.fillStyle = '#111111';
+            ctx.shadowBlur = 0;
+            ctx.fillRect(-this.width / 2 - 4, -this.height / 3, 6, 22);
+            ctx.fillRect(this.width / 2 - 2, -this.height / 3, 6, 22);
+            ctx.fillRect(-this.width / 2 - 4, this.height / 4, 6, 26);
+            ctx.fillRect(this.width / 2 - 2, this.height / 4, 6, 26);
+        }
 
         ctx.restore();
     }
 }
 
 /**
- * Enemy Car Class with Enhanced Horizon Visibility and Perspective Scaling
+ * Enemy Car Class with PNG Sprite Support & Fallback
  */
 class EnemyCar {
     constructor() {
@@ -346,37 +362,41 @@ class EnemyCar {
         ctx.save();
         ctx.translate(x, y);
 
-        // Enhanced visibility shape for distance
-        ctx.fillStyle = '#ffaa00';
-        ctx.shadowColor = '#ffaa00';
-        ctx.shadowBlur = 12 * scale;
+        if (enemyImageLoaded) {
+            ctx.drawImage(enemyImage, -carWidth / 2, -carHeight / 2, carWidth, carHeight);
+        } else {
+            // Fallback Canvas drawing
+            ctx.fillStyle = '#ffaa00';
+            ctx.shadowColor = '#ffaa00';
+            ctx.shadowBlur = 12 * scale;
 
-        ctx.beginPath();
-        ctx.moveTo(-carWidth / 2 + 8 * scale, carHeight / 2);
-        ctx.lineTo(-carWidth / 2, -carHeight / 4);
-        ctx.lineTo(-carWidth / 4, -carHeight / 2);
-        ctx.lineTo(carWidth / 4, -carHeight / 2);
-        ctx.lineTo(carWidth / 2, -carHeight / 4);
-        ctx.lineTo(carWidth / 2 - 8 * scale, carHeight / 2);
-        ctx.closePath();
-        ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(-carWidth / 2 + 8 * scale, carHeight / 2);
+            ctx.lineTo(-carWidth / 2, -carHeight / 4);
+            ctx.lineTo(-carWidth / 4, -carHeight / 2);
+            ctx.lineTo(carWidth / 4, -carHeight / 2);
+            ctx.lineTo(carWidth / 2, -carHeight / 4);
+            ctx.lineTo(carWidth / 2 - 8 * scale, carHeight / 2);
+            ctx.closePath();
+            ctx.fill();
 
-        // Windshield
-        ctx.fillStyle = '#0b0b16';
-        ctx.beginPath();
-        ctx.moveTo(-carWidth / 4 + 2, -carHeight / 2 + 8 * scale);
-        ctx.lineTo(carWidth / 4 - 2, -carHeight / 2 + 8 * scale);
-        ctx.lineTo(carWidth / 3 - 2, -2);
-        ctx.lineTo(-carWidth / 3 + 2, -2);
-        ctx.closePath();
-        ctx.fill();
+            // Windshield
+            ctx.fillStyle = '#0b0b16';
+            ctx.beginPath();
+            ctx.moveTo(-carWidth / 4 + 2, -carHeight / 2 + 8 * scale);
+            ctx.lineTo(carWidth / 4 - 2, -carHeight / 2 + 8 * scale);
+            ctx.lineTo(carWidth / 3 - 2, -2);
+            ctx.lineTo(-carWidth / 3 + 2, -2);
+            ctx.closePath();
+            ctx.fill();
 
-        // Prominent Taillights for better visibility at a distance
-        ctx.shadowColor = '#ff0000';
-        ctx.shadowBlur = 15 * scale;
-        ctx.fillStyle = '#ff0000';
-        ctx.fillRect(-carWidth / 2 + 4 * scale, carHeight / 2 - 8 * scale, Math.max(4, 10 * scale), Math.max(2, 4 * scale));
-        ctx.fillRect(carWidth / 2 - 14 * scale, carHeight / 2 - 8 * scale, Math.max(4, 10 * scale), Math.max(2, 4 * scale));
+            // Prominent Taillights for better visibility at a distance
+            ctx.shadowColor = '#ff0000';
+            ctx.shadowBlur = 15 * scale;
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(-carWidth / 2 + 4 * scale, carHeight / 2 - 8 * scale, Math.max(4, 10 * scale), Math.max(2, 4 * scale));
+            ctx.fillRect(carWidth / 2 - 14 * scale, carHeight / 2 - 8 * scale, Math.max(4, 10 * scale), Math.max(2, 4 * scale));
+        }
 
         ctx.restore();
     }
