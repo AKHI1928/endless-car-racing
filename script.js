@@ -491,17 +491,14 @@ const enemyManager = new EnemyManager(5);
  * Standard 60 FPS Game Loop
  */
 function gameLoop() {
-    if (isGameOver) return;
-
     // Clear canvas
     ctx.fillStyle = '#0b0b16';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Calculate dynamic difficulty scaling based on score
-    // Difficulty increases every 20 score units
     const currentDisplayScore = Math.floor(score / 10);
     const difficultyLevel = Math.floor(currentDisplayScore / 20);
-    const difficultyMultiplier = 1 + (difficultyLevel * 0.15); // Speed and frequency multiplier
+    const difficultyMultiplier = 1 + (difficultyLevel * 0.15);
 
     // Update and render the perspective road with speed scaling
     road.update(difficultyMultiplier);
@@ -515,8 +512,10 @@ function gameLoop() {
     playerCar.update(canvas.width, canvas.height);
     playerCar.draw(ctx);
 
-    // Increment live score every frame while game is running
-    score += 1;
+    // Increment live score every frame while game is running (if not game over)
+    if (!isGameOver) {
+        score += 1;
+    }
 
     // Display Score and Best Score in the top-right corner
     ctx.save();
@@ -530,14 +529,16 @@ function gameLoop() {
     ctx.restore();
 
     // Check collisions with all enemies using EnemyManager
-    const playerBounds = playerCar.getBounds();
-    if (enemyManager.checkCollisions(playerBounds, canvas.width, canvas.height)) {
-        isGameOver = true;
+    if (!isGameOver) {
+        const playerBounds = playerCar.getBounds();
+        if (enemyManager.checkCollisions(playerBounds, canvas.width, canvas.height)) {
+            isGameOver = true;
 
-        // Save Best Score using localStorage
-        if (score > bestScore) {
-            bestScore = score;
-            localStorage.setItem('luckyNitroBestScore', bestScore);
+            // Save Best Score using localStorage
+            if (score > bestScore) {
+                bestScore = score;
+                localStorage.setItem('luckyNitroBestScore', bestScore);
+            }
         }
     }
 
@@ -552,10 +553,9 @@ function gameLoop() {
         ctx.shadowBlur = 25;
         ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2);
         ctx.restore();
-        return;
     }
 
-    // Maintain 60 FPS
+    // Maintain 60 FPS loop continuously
     requestAnimationFrame(gameLoop);
 }
 
