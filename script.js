@@ -236,7 +236,7 @@ class CityBackground {
 }
 
 /**
- * Upgraded Cyberpunk Speed Road Renderer with Professional Effects
+ * Upgraded Cyberpunk Speed Road Renderer with Professional Effects & Cyan Speed Lines
  */
 class CyberpunkRoad {
     constructor() {
@@ -248,14 +248,14 @@ class CyberpunkRoad {
     }
 
     initSpeedElements() {
-        // Initialize dynamic moving speed streaks
-        for (let i = 0; i < 25; i++) {
+        // Initialize dynamic moving speed streaks (cyan speed lines)
+        for (let i = 0; i < 35; i++) {
             this.speedStreaks.push({
                 x: Math.random() * window.innerWidth,
                 y: Math.random() * window.innerHeight,
-                length: Math.random() * 40 + 20,
-                speed: Math.random() * 12 + 8,
-                alpha: Math.random() * 0.5 + 0.1
+                length: Math.random() * 50 + 30,
+                speed: Math.random() * 15 + 10,
+                alpha: Math.random() * 0.6 + 0.2
             });
         }
 
@@ -294,7 +294,7 @@ class CyberpunkRoad {
         }
     }
 
-    draw(ctx, width, height, speedMultiplier = 1) {
+    draw(ctx, width, height, speedMultiplier = 1, isNitroActive = false) {
         const topRoadWidth = width * 0.15;   
         const bottomRoadWidth = width * 0.55; 
         const horizonY = height * 0.35;       
@@ -332,12 +332,12 @@ class CyberpunkRoad {
         ctx.fill();
 
         // 2. Neon Light Strips on both sides with bloom / glow
-        const glowIntensity = 10 + (speedMultiplier * 5);
+        const glowIntensity = isNitroActive ? 25 : (10 + (speedMultiplier * 5));
         ctx.save();
         ctx.shadowColor = '#00f0ff';
         ctx.shadowBlur = glowIntensity;
         ctx.strokeStyle = '#00f0ff';
-        ctx.lineWidth = 5;
+        ctx.lineWidth = isNitroActive ? 7 : 5;
 
         // Left neon border
         ctx.beginPath();
@@ -417,14 +417,16 @@ class CyberpunkRoad {
         }
         ctx.restore();
 
-        // 5. Speed Streaks (Fullscreen immersive feel)
+        // 5. Cyan Speed Lines (Highlighted during Nitro)
         ctx.save();
-        ctx.strokeStyle = 'rgba(0, 240, 255, 0.35)';
-        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = isNitroActive ? 'rgba(0, 240, 255, 0.8)' : 'rgba(0, 240, 255, 0.35)';
+        ctx.lineWidth = isNitroActive ? 2.5 : 1.5;
+        ctx.shadowColor = '#00f0ff';
+        ctx.shadowBlur = isNitroActive ? 12 : 4;
         for (let streak of this.speedStreaks) {
             ctx.beginPath();
             ctx.moveTo(streak.x, streak.y);
-            ctx.lineTo(streak.x, streak.y + streak.length);
+            ctx.lineTo(streak.x, streak.y + (isNitroActive ? streak.length * 1.5 : streak.length));
             ctx.stroke();
         }
         ctx.restore();
@@ -432,7 +434,7 @@ class CyberpunkRoad {
 }
 
 /**
- * Player Car Controller & Renderer with Professional Cyberpunk Sports Car Design & Nitro Boost Support
+ * Player Car Controller & Renderer with Professional Cyberpunk Sports Car Design & Nitro Boost System
  */
 class PlayerCar {
     constructor() {
@@ -446,11 +448,13 @@ class PlayerCar {
         this.friction = 0.85;
         this.maxSpeed = 10;
 
-        // Nitro System properties
+        // Professional Nitro Boost System properties (lasts 5 seconds at 60 FPS = 300 frames)
         this.nitroMeter = 100; // 0 to 100
         this.isNitroActive = false;
         this.nitroKeyHeld = false;
         this.mobileNitroPressed = false;
+        this.nitroTimer = 0;
+        this.maxNitroFrames = 300; // 5 seconds at 60fps
 
         // Input states
         this.keys = {
@@ -469,6 +473,7 @@ class PlayerCar {
         this.isNitroActive = false;
         this.nitroKeyHeld = false;
         this.mobileNitroPressed = false;
+        this.nitroTimer = 0;
         this.keys.left = false;
         this.keys.right = false;
     }
@@ -481,8 +486,10 @@ class PlayerCar {
             if (e.code === 'ArrowRight' || e.code === 'KeyD') {
                 this.keys.right = true;
             }
-            if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+            if (e.code === 'Space') {
+                e.preventDefault(); // Prevent page scrolling
                 this.nitroKeyHeld = true;
+                this.tryActivateNitro();
             }
         });
 
@@ -493,17 +500,24 @@ class PlayerCar {
             if (e.code === 'ArrowRight' || e.code === 'KeyD') {
                 this.keys.right = false;
             }
-            if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
+            if (e.code === 'Space') {
                 this.nitroKeyHeld = false;
             }
         });
+    }
+
+    tryActivateNitro() {
+        if (!isGameOver && this.nitroMeter > 0 && !this.isNitroActive) {
+            this.isNitroActive = true;
+            this.nitroTimer = this.maxNitroFrames;
+        }
     }
 
     setupMobileControls() {
         // Create professional onscreen Nitro button for mobile users
         const nitroBtn = document.createElement('div');
         nitroBtn.id = 'mobileNitroBtn';
-        nitroBtn.innerHTML = 'NITRO';
+        nitroBtn.innerHTML = 'NITRO (SPACE)';
         nitroBtn.style.position = 'fixed';
         nitroBtn.style.bottom = '30px';
         nitroBtn.style.right = '30px';
@@ -522,20 +536,19 @@ class PlayerCar {
 
         document.body.appendChild(nitroBtn);
 
-        nitroBtn.addEventListener('touchstart', (e) => {
+        const handleMobileNitro = (e) => {
             e.preventDefault();
             this.mobileNitroPressed = true;
-        });
+            this.tryActivateNitro();
+        };
+
+        nitroBtn.addEventListener('touchstart', handleMobileNitro);
+        nitroBtn.addEventListener('mousedown', handleMobileNitro);
 
         nitroBtn.addEventListener('touchend', (e) => {
             e.preventDefault();
             this.mobileNitroPressed = false;
         });
-
-        nitroBtn.addEventListener('mousedown', () => {
-            this.mobileNitroPressed = true;
-        });
-
         nitroBtn.addEventListener('mouseup', () => {
             this.mobileNitroPressed = false;
         });
@@ -549,18 +562,20 @@ class PlayerCar {
             this.x = canvasWidth / 2;
         }
 
-        // Handle Nitro activation logic
-        const triggerNitro = this.nitroKeyHeld || this.mobileNitroPressed;
+        // Handle Nitro duration and meter logic (lasts exactly 5 seconds)
+        if (this.isNitroActive && !isGameOver) {
+            this.nitroTimer--;
+            // Decrease meter proportionally over 300 frames (5 seconds)
+            this.nitroMeter = Math.max(0, (this.nitroTimer / this.maxNitroFrames) * 100);
 
-        if (triggerNitro && this.nitroMeter > 0 && !isGameOver) {
-            this.isNitroActive = true;
-            this.nitroMeter -= 0.6; // Drain nitro while active
-            if (this.nitroMeter < 0) this.nitroMeter = 0;
+            if (this.nitroTimer <= 0 || this.nitroMeter <= 0) {
+                this.isNitroActive = false;
+                this.nitroTimer = 0;
+            }
         } else {
-            this.isNitroActive = false;
-            // Slowly recharge nitro when not active
+            // Recharges slowly when Nitro is off
             if (this.nitroMeter < 100 && !isGameOver) {
-                this.nitroMeter += 0.25;
+                this.nitroMeter += 0.25; // Recharges smoothly over time
                 if (this.nitroMeter > 100) this.nitroMeter = 100;
             }
         }
@@ -575,7 +590,7 @@ class PlayerCar {
         }
 
         // Clamp velocity to max speed (increased when nitro is active)
-        const currentMaxSpeed = this.isNitroActive ? this.maxSpeed * 1.5 : this.maxSpeed;
+        const currentMaxSpeed = this.isNitroActive ? this.maxSpeed * 1.6 : this.maxSpeed;
         if (this.vx > currentMaxSpeed) this.vx = currentMaxSpeed;
         if (this.vx < -currentMaxSpeed) this.vx = -currentMaxSpeed;
 
@@ -630,24 +645,16 @@ class PlayerCar {
             ctx.shadowBlur = 30;
         }
 
-        // Draw Cyan Motion Blur / Speed trails if Nitro is active
+        // Draw Blue Flames & Intense Blue Glow behind the car when Nitro is active
         if (this.isNitroActive && !isGameOver) {
             ctx.save();
-            ctx.fillStyle = 'rgba(0, 240, 255, 0.25);';
-            ctx.shadowColor = '#00f0ff';
-            ctx.shadowBlur = 25;
-            ctx.fillRect(-this.width / 2 - 4, this.height / 2, this.width + 8, 40);
-            ctx.restore();
-
-            // Blue Flames behind the car
-            ctx.save();
             ctx.shadowColor = '#0088ff';
-            ctx.shadowBlur = 20;
+            ctx.shadowBlur = 30;
             ctx.fillStyle = '#00ffff';
             ctx.beginPath();
-            ctx.moveTo(-15, this.height / 2);
-            ctx.lineTo(0, this.height / 2 + 35 + Math.random() * 15);
-            ctx.lineTo(15, this.height / 2);
+            ctx.moveTo(-18, this.height / 2);
+            ctx.lineTo(0, this.height / 2 + 50 + Math.random() * 20);
+            ctx.lineTo(18, this.height / 2);
             ctx.closePath();
             ctx.fill();
             ctx.restore();
@@ -657,9 +664,9 @@ class PlayerCar {
         const w = this.width;
         const h = this.height;
 
-        // Drop shadow & glow (enhanced during nitro)
-        ctx.shadowColor = (isGameOver && isFlashingRed) ? '#ff0000' : '#ff007f';
-        ctx.shadowBlur = this.isNitroActive ? 30 : 20;
+        // Drop shadow & blue glow around player car when Nitro is active
+        ctx.shadowColor = (isGameOver && isFlashingRed) ? '#ff0000' : (this.isNitroActive ? '#00f0ff' : '#ff007f');
+        ctx.shadowBlur = this.isNitroActive ? 35 : 20;
 
         // Metallic body gradient shading
         const bodyGrad = ctx.createLinearGradient(-w / 2, 0, w / 2, 0);
@@ -1042,12 +1049,53 @@ class EnemyManager {
     }
 }
 
+/**
+ * Rain Effect Class - Handles Atmospheric Cyberpunk Weather
+ */
+class RainEffect {
+    constructor() {
+        this.drops = [];
+        for (let i = 0; i < 100; i++) {
+            this.drops.push({
+                x: Math.random() * window.innerWidth,
+                y: Math.random() * window.innerHeight,
+                length: Math.random() * 20 + 10,
+                speed: Math.random() * 15 + 10
+            });
+        }
+    }
+
+    update(speedMultiplier = 1) {
+        for (let drop of this.drops) {
+            drop.y += drop.speed * speedMultiplier;
+            if (drop.y > window.innerHeight) {
+                drop.y = -20;
+                drop.x = Math.random() * window.innerWidth;
+            }
+        }
+    }
+
+    draw(ctx) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
+        ctx.lineWidth = 1;
+        for (let drop of this.drops) {
+            ctx.beginPath();
+            ctx.moveTo(drop.x, drop.y);
+            ctx.lineTo(drop.x - 1, drop.y + drop.length);
+            ctx.stroke();
+        }
+        ctx.restore();
+    }
+}
+
 // Initialize instances
 const sky = new Sky();
 const cityBackground = new CityBackground();
 const road = new CyberpunkRoad();
 const playerCar = new PlayerCar();
 const enemyManager = new EnemyManager();
+const rain = new RainEffect();
 
 // Setup DOM overlay for Game Over professional panel & buttons
 const gameOverContainer = document.createElement('div');
@@ -1133,7 +1181,7 @@ const mainMenuBtn = document.getElementById('mainMenuBtn');
 const goFinalScore = document.getElementById('goFinalScore');
 const goBestScore = document.getElementById('goBestScore');
 
-playAgainstClicked = () => {
+const restartGame = () => {
     isGameOver = false;
     score = 0;
     crashTimer = 0;
@@ -1146,8 +1194,8 @@ playAgainstClicked = () => {
     gameOverContainer.style.display = 'none';
 };
 
-playAgainBtn.addEventListener('click', playAgainstClicked);
-playAgainBtn.addEventListener('touchstart', (e) => { e.preventDefault(); playAgainstClicked(); });
+playAgainBtn.addEventListener('click', restartGame);
+playAgainBtn.addEventListener('touchstart', (e) => { e.preventDefault(); restartGame(); });
 
 mainMenuBtn.addEventListener('click', () => {
     alert('Main Menu placeholder clicked!');
@@ -1170,9 +1218,9 @@ function gameLoop() {
     const difficultyLevel = Math.floor(currentDisplayScore / 20);
     let difficultyMultiplier = 1 + (difficultyLevel * 0.15);
 
-    // Increase multipliers when Nitro is active
+    // Road scroll speed increases by 60% during Nitro
     if (playerCar.isNitroActive && !isGameOver) {
-        difficultyMultiplier *= 1.8;
+        difficultyMultiplier *= 1.60;
     }
 
     if (isGameOver) {
@@ -1218,10 +1266,10 @@ function gameLoop() {
         }
     }
 
-    // Subtle camera shake at high speeds/difficulty or during nitro
+    // Screen shakes slightly during Nitro or high speeds
     ctx.save();
-    if (((difficultyLevel >= 2 || playerCar.isNitroActive) && !isGameOver)) {
-        const shakeIntensity = playerCar.isNitroActive ? 3.5 : Math.min(4, (difficultyLevel - 1) * 0.8);
+    if ((playerCar.isNitroActive || difficultyLevel >= 2) && !isGameOver) {
+        const shakeIntensity = playerCar.isNitroActive ? 3.0 : Math.min(3, (difficultyLevel - 1) * 0.8);
         const shakeX = (Math.random() - 0.5) * shakeIntensity;
         const shakeY = (Math.random() - 0.5) * shakeIntensity;
         ctx.translate(shakeX, shakeY);
@@ -1237,10 +1285,11 @@ function gameLoop() {
 
     // 3. Draw Upgraded Cyberpunk Speed Road (Drawn BEFORE cars, AFTER city)
     road.update(difficultyMultiplier);
-    road.draw(ctx, canvas.width, canvas.height, difficultyMultiplier);
+    road.draw(ctx, canvas.width, canvas.height, difficultyMultiplier, playerCar.isNitroActive);
 
-    // 4. Update and render all enemies via EnemyManager traffic AI
-    enemyManager.update(difficultyMultiplier);
+    // 4. Update and render all enemies via EnemyManager traffic AI (Enemy cars move faster during Nitro)
+    const enemyDifficultyMultiplier = playerCar.isNitroActive ? difficultyMultiplier * 1.60 : difficultyMultiplier;
+    enemyManager.update(enemyDifficultyMultiplier);
     enemyManager.draw(ctx, canvas.width, canvas.height);
 
     // 5. Update and render the player car
@@ -1248,6 +1297,10 @@ function gameLoop() {
         playerCar.update(canvas.width, canvas.height);
     }
     playerCar.draw(ctx);
+
+    // 6. Draw atmospheric rain effect
+    rain.update(difficultyMultiplier);
+    rain.draw(ctx);
 
     // Draw smoke particles behind/around crashed player car
     if (isGameOver) {
@@ -1303,7 +1356,7 @@ function gameLoop() {
     ctx.shadowColor = '#00f0ff';
     ctx.shadowBlur = 8;
     ctx.textAlign = 'left';
-    ctx.fillText('NITRO BOOST', 30, 40);
+    ctx.fillText('NITRO BOOST (SPACE)', 30, 40);
 
     // Meter Background Bar
     ctx.fillStyle = '#11111a';
