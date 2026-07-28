@@ -12,6 +12,14 @@ let isGameOver = false;
 let score = 0;
 let bestScore = parseInt(localStorage.getItem('luckyNitroBestScore')) || 0;
 
+// Game over animation & state variables
+let crashTimer = 0;
+let playerCrashAngle = (Math.random() > 0.5 ? 1 : -1) * (Math.random() * 20 + 20) * (Math.PI / 180);
+let playerCrashBackward = 0;
+let smokeParticles = [];
+let isFlashingRed = true;
+let flashTimer = 0;
+
 // Load images with fallback support
 const playerImage = new Image();
 playerImage.src = 'assets/player.png';
@@ -465,6 +473,17 @@ class PlayerCar {
         this.setupMobileControls();
     }
 
+    reset() {
+        this.x = canvas.width / 2;
+        this.vx = 0;
+        this.nitroMeter = 100;
+        this.isNitroActive = false;
+        this.nitroKeyHeld = false;
+        this.mobileNitroPressed = false;
+        this.keys.left = false;
+        this.keys.right = false;
+    }
+
     setupListeners() {
         window.addEventListener('keydown', (e) => {
             if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
@@ -603,13 +622,27 @@ class PlayerCar {
 
     draw(ctx) {
         ctx.save();
-        ctx.translate(this.x, this.y);
 
-        const tilt = this.vx * 0.015;
-        ctx.rotate(tilt);
+        let renderY = this.y;
+        let renderAngle = this.vx * 0.015;
+
+        if (isGameOver) {
+            renderY += playerCrashBackward;
+            renderAngle = playerCrashAngle;
+        }
+
+        ctx.translate(this.x, renderY);
+        ctx.rotate(renderAngle);
+
+        // Flash red for 1 second during game over
+        if (isGameOver && isFlashingRed) {
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.6)';
+            ctx.shadowColor = '#ff0000';
+            ctx.shadowBlur = 30;
+        }
 
         // Draw Cyan Motion Blur / Speed trails if Nitro is active
-        if (this.isNitroActive) {
+        if (this.isNitroActive && !isGameOver) {
             ctx.save();
             ctx.fillStyle = 'rgba(0, 240, 255, 0.25);';
             ctx.shadowColor = '#00f0ff';
@@ -639,11 +672,11 @@ class PlayerCar {
             const h = this.height;
 
             // Drop shadow & glow (enhanced during nitro)
-            ctx.shadowColor = '#ff007f';
+            ctx.shadowColor = (isGameOver && isFlashingRed) ? '#ff0000' : '#ff007f';
             ctx.shadowBlur = this.isNitroActive ? 30 : 18;
 
             // Detailed Body Shape (Sleek aerodynamic curves)
-            ctx.fillStyle = '#ff007f'; // Primary Pink / Magenta
+            ctx.fillStyle = (isGameOver && isFlashingRed) ? '#cc0000' : '#ff007f'; // Primary Pink / Magenta or Red flash
             ctx.beginPath();
             ctx.moveTo(-w / 2 + 12, h / 2 - 10);
             ctx.lineTo(-w / 2 + 4, -10);
@@ -657,7 +690,7 @@ class PlayerCar {
             ctx.fill();
 
             // Hood / Body Highlights & Aerodynamic Panels
-            ctx.fillStyle = '#cc0066';
+            ctx.fillStyle = (isGameOver && isFlashingRed) ? '#990000' : '#cc0066';
             ctx.beginPath();
             ctx.moveTo(-w / 4, -h / 2 + 15);
             ctx.lineTo(w / 4, -h / 2 + 15);
@@ -733,7 +766,9 @@ class EnemyCar {
     }
 
     update(difficultyMultiplier = 1) {
-        this.progress += this.speed * difficultyMultiplier;
+        if (!isGameOver) {
+            this.progress += this.speed * difficultyMultiplier;
+        }
     }
 
     getBounds(width, height) {
@@ -861,6 +896,12 @@ class EnemyManager {
         this.init();
     }
 
+    reset() {
+        this.enemies = [];
+        this.spawnTimer = 0;
+        this.init();
+    }
+
     getRandomColor() {
         const colors = ['#ffcc00', '#00f0ff', '#00ff66', '#ff0033', '#ffffff'];
         return colors[Math.floor(Math.random() * colors.length)];
@@ -890,24 +931,26 @@ class EnemyManager {
             let enemy = this.enemies[i];
             enemy.update(difficultyMultiplier);
 
-            if (enemy.progress > 1.2) {
+            if (!isGameOver && enemy.progress > 1.2) {
                 this.enemies.splice(i, 1);
             }
         }
 
-        this.spawnTimer++;
-        const currentDisplayScore = Math.floor(score / 10);
-        const difficultyLevel = Math.floor(currentDisplayScore / 20);
-        
-        const spawnInterval = Math.max(45, 90 - (difficultyLevel * 8));
-        const maxConcurrentCars = Math.min(8, 5 + Math.floor(difficultyLevel / 2));
+        if (!isGameOver) {
+            this.spawnTimer++;
+            const currentDisplayScore = Math.floor(score / 10);
+            const difficultyLevel = Math.floor(currentDisplayScore / 20);
+            
+            const spawnInterval = Math.max(45, 90 - (difficultyLevel * 8));
+            const maxConcurrentCars = Math.min(8, 5 + Math.floor(difficultyLevel / 2));
 
-        if (this.spawnTimer >= spawnInterval && this.enemies.length < maxConcurrentCars) {
-            this.spawnTimer = 0;
-            this.trySpawnCar();
+            if (this.spawnTimer >= spawnInterval && this.enemies.length < maxConcurrentCars) {
+                this.spawnTimer = 0;
+                this.trySpawnCar();
+            }
+
+            this.preventLaneOverlaps();
         }
-
-        this.preventLaneOverlaps();
     }
 
     trySpawnCar() {
@@ -989,6 +1032,114 @@ const road = new CyberpunkRoad();
 const playerCar = new PlayerCar();
 const enemyManager = new EnemyManager();
 
+// Setup DOM overlay for Game Over professional panel & buttons
+const gameOverContainer = document.createElement('div');
+gameOverContainer.id = 'gameOverContainer';
+gameOverContainer.style.position = 'fixed';
+gameOverContainer.style.top = '0';
+gameOverContainer.style.left = '0';
+gameOverContainer.style.width = '100vw';
+gameOverContainer.style.height = '100vh';
+gameOverContainer.style.display = 'none';
+gameOverContainer.style.justifyContent = 'center';
+gameOverContainer.style.alignItems = 'center';
+gameOverContainer.style.zIndex = '2000';
+gameOverContainer.style.background = 'rgba(0, 0, 0, 0.75)';
+gameOverContainer.style.backdropFilter = 'blur(5px)';
+
+gameOverContainer.innerHTML = `
+    <div style="
+        background: linear-gradient(135deg, #0f0c1b, #1a102f);
+        border: 2px solid #ff007f;
+        box-shadow: 0 0 35px rgba(255, 0, 127, 0.6), inset 0 0 20px rgba(0, 240, 255, 0.2);
+        padding: 40px;
+        border-radius: 20px;
+        text-align: center;
+        width: 380px;
+        font-family: 'sans-serif';
+        color: #ffffff;
+    ">
+        <h2 style="
+            margin-top: 0;
+            font-size: 38px;
+            letter-spacing: 2px;
+            color: #ff007f;
+            text-shadow: 0 0 15px #ff007f;
+            margin-bottom: 25px;
+        ">GAME OVER</h2>
+        
+        <div style="
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid #00f0ff;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 30px;
+            box-shadow: inset 0 0 10px rgba(0, 240, 255, 0.2);
+        ">
+            <p id="goFinalScore" style="margin: 10px 0; font-size: 20px; color: #00f0ff; text-shadow: 0 0 8px #00f0ff;">FINAL SCORE: 0</p>
+            <p id="goBestScore" style="margin: 10px 0; font-size: 18px; color: #ffcc00; text-shadow: 0 0 8px #ffcc00;">BEST SCORE: 0</p>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 15px;">
+            <button id="playAgainBtn" style="
+                background: linear-gradient(135deg, #00f0ff, #0055ff);
+                color: #ffffff;
+                border: none;
+                padding: 14px;
+                font-size: 18px;
+                font-weight: bold;
+                border-radius: 10px;
+                cursor: pointer;
+                box-shadow: 0 0 15px rgba(0, 240, 255, 0.6);
+                transition: transform 0.1s ease;
+            ">▶ PLAY AGAIN</button>
+
+            <button id="mainMenuBtn" style="
+                background: linear-gradient(135deg, #ff007f, #9900ff);
+                color: #ffffff;
+                border: none;
+                padding: 14px;
+                font-size: 18px;
+                font-weight: bold;
+                border-radius: 10px;
+                cursor: pointer;
+                box-shadow: 0 0 15px rgba(255, 0, 127, 0.6);
+                transition: transform 0.1s ease;
+            ">🏠 MAIN MENU</button>
+        </div>
+    </div>
+`;
+document.body.appendChild(gameOverContainer);
+
+const playAgainBtn = document.getElementById('playAgainBtn');
+const mainMenuBtn = document.getElementById('mainMenuBtn');
+const goFinalScore = document.getElementById('goFinalScore');
+const goBestScore = document.getElementById('goBestScore');
+
+playAgainstClicked = () => {
+    isGameOver = false;
+    score = 0;
+    crashTimer = 0;
+    playerCrashBackward = 0;
+    smokeParticles = [];
+    isFlashingRed = true;
+    flashTimer = 0;
+    playerCar.reset();
+    enemyManager.reset();
+    gameOverContainer.style.display = 'none';
+};
+
+playAgainBtn.addEventListener('click', playAgainstClicked);
+playAgainBtn.addEventListener('touchstart', (e) => { e.preventDefault(); playAgainstClicked(); });
+
+mainMenuBtn.addEventListener('click', () => {
+    alert('Main Menu placeholder clicked!');
+});
+mainMenuBtn.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    alert('Main Menu placeholder clicked!');
+});
+
 /**
  * Standard 60 FPS Game Loop
  */
@@ -1003,13 +1154,56 @@ function gameLoop() {
     let difficultyMultiplier = 1 + (difficultyLevel * 0.15);
 
     // Increase multipliers when Nitro is active
-    if (playerCar.isNitroActive) {
+    if (playerCar.isNitroActive && !isGameOver) {
         difficultyMultiplier *= 1.8;
+    }
+
+    if (isGameOver) {
+        difficultyMultiplier = 0;
+    }
+
+    // Handle Game Over flash timer (1 second duration)
+    if (isGameOver) {
+        crashTimer++;
+        flashTimer++;
+        if (flashTimer >= 15) { // toggle every 15 frames (~0.25s)
+            isFlashingRed = !isFlashingRed;
+            flashTimer = 0;
+        }
+
+        // Smoothly move player slightly backward during crash
+        if (playerCrashBackward < 25) {
+            playerCrashBackward += 0.8;
+        }
+
+        // Emit smoke particles from crash position
+        if (crashTimer % 3 === 0 && smokeParticles.length < 30) {
+            smokeParticles.push({
+                x: playerCar.x + (Math.random() - 0.5) * 30,
+                y: canvas.height - playerCar.height - 30 + (Math.random() - 0.5) * 30,
+                vx: (Math.random() - 0.5) * 2,
+                vy: -Math.random() * 3 - 1,
+                radius: Math.random() * 8 + 5,
+                alpha: 0.8
+            });
+        }
+    }
+
+    // Update smoke particles
+    for (let i = smokeParticles.length - 1; i >= 0; i--) {
+        let p = smokeParticles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.radius += 0.4;
+        p.alpha -= 0.03;
+        if (p.alpha <= 0) {
+            smokeParticles.splice(i, 1);
+        }
     }
 
     // Subtle camera shake at high speeds/difficulty or during nitro
     ctx.save();
-    if ((difficultyLevel >= 2 || playerCar.isNitroActive) && !isGameOver) {
+    if (((difficultyLevel >= 2 || playerCar.isNitroActive) && !isGameOver)) {
         const shakeIntensity = playerCar.isNitroActive ? 3.5 : Math.min(4, (difficultyLevel - 1) * 0.8);
         const shakeX = (Math.random() - 0.5) * shakeIntensity;
         const shakeY = (Math.random() - 0.5) * shakeIntensity;
@@ -1033,19 +1227,41 @@ function gameLoop() {
     enemyManager.draw(ctx, canvas.width, canvas.height);
 
     // 5. Update and render the player car
-    playerCar.update(canvas.width, canvas.height);
+    if (!isGameOver) {
+        playerCar.update(canvas.width, canvas.height);
+    }
     playerCar.draw(ctx);
+
+    // Draw smoke particles behind/around crashed player car
+    if (isGameOver) {
+        ctx.save();
+        for (let p of smokeParticles) {
+            ctx.fillStyle = `rgba(150, 150, 150, ${Math.max(0, p.alpha)})`;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
+    }
 
     ctx.restore(); // Restore from camera shake translation
 
-    // Soft Vignette Overlay around screen edges
-    ctx.save();
-    const vignette = ctx.createRadialGradient(canvas.width / 2, canvas.height / 2, canvas.width * 0.35, canvas.width / 2, canvas.height / 2, canvas.width * 0.75);
-    vignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
-    vignette.addColorStop(1, 'rgba(5, 2, 10, 0.75)');
-    ctx.fillStyle = vignette;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.restore();
+    // Darken the entire screen with a transparent black overlay if game over
+    if (isGameOver) {
+        ctx.save();
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
+    } else {
+        // Soft Vignette Overlay around screen edges
+        ctx.save();
+        const vignette = ctx.createRadialGradient(canvas.width / 2, canvas.height / 2, canvas.width * 0.35, canvas.width / 2, canvas.height / 2, canvas.width * 0.75);
+        vignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
+        vignette.addColorStop(1, 'rgba(5, 2, 10, 0.75)');
+        ctx.fillStyle = vignette;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
+    }
 
     // Increment live score every frame while game is running
     if (!isGameOver) {
@@ -1094,26 +1310,22 @@ function gameLoop() {
         const playerBounds = playerCar.getBounds();
         if (enemyManager.checkCollisions(playerBounds, canvas.width, canvas.height)) {
             isGameOver = true;
+            crashTimer = 0;
+            flashTimer = 0;
+            playerCrashBackward = 0;
+            playerCrashAngle = (Math.random() > 0.5 ? 1 : -1) * (Math.random() * 20 + 20) * (Math.PI / 180);
 
             // Save Best Score using localStorage
             if (score > bestScore) {
                 bestScore = score;
                 localStorage.setItem('luckyNitroBestScore', bestScore);
             }
-        }
-    }
 
-    // If game over occurred, display message overlay
-    if (isGameOver) {
-        ctx.save();
-        ctx.font = 'bold 64px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillStyle = '#ff0033';
-        ctx.shadowColor = '#ff0033';
-        ctx.shadowBlur = 25;
-        ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2);
-        ctx.restore();
+            // Update Game Over Panel Scores & Display Container
+            goFinalScore.textContent = `FINAL SCORE: ${currentDisplayScore}`;
+            goBestScore.textContent = `BEST SCORE: ${Math.floor(bestScore / 10)}`;
+            gameOverContainer.style.display = 'flex';
+        }
     }
 
     // Maintain 60 FPS loop continuously
