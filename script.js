@@ -20,17 +20,6 @@ let smokeParticles = [];
 let isFlashingRed = true;
 let flashTimer = 0;
 
-// Load images with fallback support
-const playerImage = new Image();
-playerImage.src = 'assets/player.png';
-let playerImageLoaded = false;
-playerImage.onload = () => { playerImageLoaded = true; };
-
-const enemyImage = new Image();
-enemyImage.src = 'assets/enemy.png';
-let enemyImageLoaded = false;
-enemyImage.onload = () => { enemyImageLoaded = true; };
-
 // Handle canvas resizing to match window dimensions
 function resizeCanvas() {
     canvas.width = window.innerWidth;
@@ -664,105 +653,113 @@ class PlayerCar {
             ctx.restore();
         }
 
-        if (playerImageLoaded) {
-            ctx.drawImage(playerImage, -this.width / 2, -this.height / 2, this.width, this.height);
-        } else {
-            // Professional Cyberpunk Sports Car Design (Pink / Magenta Theme)
-            const w = this.width;
-            const h = this.height;
+        // Professional Cyberpunk Sports Car Design (Neon Pink Body)
+        const w = this.width;
+        const h = this.height;
 
-            // Drop shadow & glow (enhanced during nitro)
-            ctx.shadowColor = (isGameOver && isFlashingRed) ? '#ff0000' : '#ff007f';
-            ctx.shadowBlur = this.isNitroActive ? 30 : 18;
+        // Drop shadow & glow (enhanced during nitro)
+        ctx.shadowColor = (isGameOver && isFlashingRed) ? '#ff0000' : '#ff007f';
+        ctx.shadowBlur = this.isNitroActive ? 30 : 20;
 
-            // Detailed Body Shape (Sleek aerodynamic curves)
-            ctx.fillStyle = (isGameOver && isFlashingRed) ? '#cc0000' : '#ff007f'; // Primary Pink / Magenta or Red flash
-            ctx.beginPath();
-            ctx.moveTo(-w / 2 + 12, h / 2 - 10);
-            ctx.lineTo(-w / 2 + 4, -10);
-            ctx.lineTo(-w / 2 + 10, -h / 2 + 25);
-            ctx.lineTo(-w / 4, -h / 2);
-            ctx.lineTo(w / 4, -h / 2);
-            ctx.lineTo(w / 2 - 10, -h / 2 + 25);
-            ctx.lineTo(w / 2 - 4, -10);
-            ctx.lineTo(w / 2 - 12, h / 2 - 10);
-            ctx.closePath();
-            ctx.fill();
+        // Metallic body gradient shading
+        const bodyGrad = ctx.createLinearGradient(-w / 2, 0, w / 2, 0);
+        bodyGrad.addColorStop(0, '#cc0066');
+        bodyGrad.addColorStop(0.5, '#ff007f');
+        bodyGrad.addColorStop(1, '#cc0066');
 
-            // Hood / Body Highlights & Aerodynamic Panels
-            ctx.fillStyle = (isGameOver && isFlashingRed) ? '#990000' : '#cc0066';
-            ctx.beginPath();
-            ctx.moveTo(-w / 4, -h / 2 + 15);
-            ctx.lineTo(w / 4, -h / 2 + 15);
-            ctx.lineTo(w / 3, 0);
-            ctx.lineTo(-w / 3, 0);
-            ctx.closePath();
-            ctx.fill();
+        // Detailed Body Shape (Futuristic aerodynamic curves)
+        ctx.fillStyle = (isGameOver && isFlashingRed) ? '#cc0000' : bodyGrad;
+        ctx.beginPath();
+        ctx.moveTo(-w / 2 + 12, h / 2 - 10);
+        ctx.lineTo(-w / 2 + 4, -10);
+        ctx.lineTo(-w / 2 + 10, -h / 2 + 25);
+        ctx.lineTo(-w / 4, -h / 2);
+        ctx.lineTo(w / 4, -h / 2);
+        ctx.lineTo(w / 2 - 10, -h / 2 + 25);
+        ctx.lineTo(w / 2 - 4, -10);
+        ctx.lineTo(w / 2 - 12, h / 2 - 10);
+        ctx.closePath();
+        ctx.fill();
 
-            // Dark Windshield Cockpit
-            ctx.fillStyle = '#0b0b16';
-            ctx.beginPath();
-            ctx.moveTo(-w / 4 + 4, -h / 2 + 22);
-            ctx.lineTo(w / 4 - 4, -h / 2 + 22);
-            ctx.lineTo(w / 3 - 6, -5);
-            ctx.lineTo(-w / 3 + 6, -5);
-            ctx.closePath();
-            ctx.fill();
+        // Hood / Body Metallic Highlights & Aerodynamic Panels
+        ctx.fillStyle = '#99004d';
+        ctx.beginPath();
+        ctx.moveTo(-w / 4, -h / 2 + 15);
+        ctx.lineTo(w / 4, -h / 2 + 15);
+        ctx.lineTo(w / 3, 0);
+        ctx.lineTo(-w / 3, 0);
+        ctx.closePath();
+        ctx.fill();
 
-            // Windshield Reflection / Tint line
-            ctx.strokeStyle = '#ff66b2';
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.moveTo(-w / 4 + 8, -h / 2 + 26);
-            ctx.lineTo(w / 4 - 8, -h / 2 + 26);
-            ctx.stroke();
+        // Dark Windshield Cockpit
+        ctx.fillStyle = '#05050a';
+        ctx.beginPath();
+        ctx.moveTo(-w / 4 + 4, -h / 2 + 22);
+        ctx.lineTo(w / 4 - 4, -h / 2 + 22);
+        ctx.lineTo(w / 3 - 6, -5);
+        ctx.lineTo(-w / 3 + 6, -5);
+        ctx.closePath();
+        ctx.fill();
 
-            // Wheels with detailed rims
-            ctx.fillStyle = '#111116';
-            ctx.strokeStyle = '#00f0ff';
-            ctx.lineWidth = 2;
-            
-            // Front Left Wheel
-            ctx.fillRect(-w / 2 - 5, -h / 3, 7, 24);
-            ctx.strokeRect(-w / 2 - 5, -h / 3, 7, 24);
-            // Front Right Wheel
-            ctx.fillRect(w / 2 - 2, -h / 3, 7, 24);
-            ctx.strokeRect(w / 2 - 2, -h / 3, 7, 24);
-            // Rear Left Wheel
-            ctx.fillRect(-w / 2 - 5, h / 4, 7, 28);
-            ctx.strokeRect(-w / 2 - 5, h / 4, 7, 28);
-            // Rear Right Wheel
-            ctx.fillRect(w / 2 - 2, h / 4, 7, 28);
-            ctx.strokeRect(w / 2 - 2, h / 4, 7, 28);
+        // Windshield Reflection with Cyan Glow
+        ctx.save();
+        ctx.strokeStyle = '#00f0ff';
+        ctx.shadowColor = '#00f0ff';
+        ctx.shadowBlur = 8;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(-w / 4 + 8, -h / 2 + 26);
+        ctx.lineTo(w / 4 - 8, -h / 2 + 26);
+        ctx.stroke();
+        ctx.restore();
 
-            // Neon Headlights (Cyan Glow)
-            ctx.shadowColor = '#00f0ff';
-            ctx.shadowBlur = 15;
-            ctx.fillStyle = '#00f0ff';
-            ctx.fillRect(-w / 2 + 6, -h / 2 + 4, 12, 5);
-            ctx.fillRect(w / 2 - 18, -h / 2 + 4, 12, 5);
+        // Glowing Wheels with Metallic Rims
+        ctx.fillStyle = '#111116';
+        ctx.strokeStyle = '#00f0ff';
+        ctx.lineWidth = 2;
+        ctx.shadowColor = '#00f0ff';
+        ctx.shadowBlur = 10;
+        
+        // Front Left Wheel
+        ctx.fillRect(-w / 2 - 5, -h / 3, 7, 24);
+        ctx.strokeRect(-w / 2 - 5, -h / 3, 7, 24);
+        // Front Right Wheel
+        ctx.fillRect(w / 2 - 2, -h / 3, 7, 24);
+        ctx.strokeRect(w / 2 - 2, -h / 3, 7, 24);
+        // Rear Left Wheel
+        ctx.fillRect(-w / 2 - 5, h / 4, 7, 28);
+        ctx.strokeRect(-w / 2 - 5, h / 4, 7, 28);
+        // Rear Right Wheel
+        ctx.fillRect(w / 2 - 2, h / 4, 7, 28);
+        ctx.strokeRect(w / 2 - 2, h / 4, 7, 28);
 
-            // Neon Taillights (Intense Red Glow)
-            ctx.shadowColor = '#ff0033';
-            ctx.shadowBlur = 15;
-            ctx.fillStyle = '#ff0033';
-            ctx.fillRect(-w / 2 + 5, h / 2 - 14, 14, 5);
-            ctx.fillRect(w / 2 - 19, h / 2 - 14, 14, 5);
-        }
+        // Cyan Headlights
+        ctx.shadowColor = '#00f0ff';
+        ctx.shadowBlur = 18;
+        ctx.fillStyle = '#00f0ff';
+        ctx.fillRect(-w / 2 + 6, -h / 2 + 4, 12, 5);
+        ctx.fillRect(w / 2 - 18, -h / 2 + 4, 12, 5);
+
+        // Tail Lights & Brake Lights (Intense Red Glow)
+        ctx.shadowColor = '#ff0033';
+        ctx.shadowBlur = 18;
+        ctx.fillStyle = '#ff0033';
+        ctx.fillRect(-w / 2 + 5, h / 2 - 14, 14, 5);
+        ctx.fillRect(w / 2 - 19, h / 2 - 14, 14, 5);
 
         ctx.restore();
     }
 }
 
 /**
- * Individual Enemy Car Class with Strict Horizon Clipping & Detailed Cyberpunk Sports Car Design
+ * Individual Enemy Car Class with 8 Random Colors & Perspective Scaling
  */
 class EnemyCar {
-    constructor(lane, progress, speed, color = '#ffcc00') {
+    constructor(lane, progress, speed, color) {
         this.lane = lane;           // 0: Left, 1: Center, 2: Right
         this.progress = progress;   // Progress along road (negative = above horizon)
-        this.speed = speed;         // Randomized speed tier (slow, medium, fast)
-        this.color = color;         // Random color theme (yellow, blue, green, red, white)
+        this.speed = speed;         // Randomized speed tier
+        this.color = color;         // Hex color string
     }
 
     update(difficultyMultiplier = 1) {
@@ -813,74 +810,84 @@ class EnemyCar {
         ctx.save();
         ctx.translate(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
 
-        if (enemyImageLoaded) {
-            ctx.drawImage(enemyImage, -bounds.width / 2, -bounds.height / 2, bounds.width, bounds.height);
-        } else {
-            // Professional Cyberpunk Sports Car Design for Enemies
-            const bw = bounds.width;
-            const bh = bounds.height;
+        // Professional Cyberpunk Sports Car Design for Enemies
+        const bw = bounds.width;
+        const bh = bounds.height;
 
-            // Glow and shadows scaled with perspective
-            ctx.shadowColor = this.color;
-            ctx.shadowBlur = 14 * scale;
+        // Glow and shadows scaled with perspective
+        ctx.shadowColor = this.color;
+        ctx.shadowBlur = 16 * scale;
 
-            // Detailed Body Shape
-            ctx.fillStyle = this.color;
-            ctx.beginPath();
-            ctx.moveTo(-bw / 2 + 10 * scale, bh / 2 - 8 * scale);
-            ctx.lineTo(-bw / 2 + 4 * scale, -5 * scale);
-            ctx.lineTo(-bw / 4, -bh / 2 + 15 * scale);
-            ctx.lineTo(bw / 4, -bh / 2 + 15 * scale);
-            ctx.lineTo(bw / 2 - 4 * scale, -5 * scale);
-            ctx.lineTo(bw / 2 - 10 * scale, bh / 2 - 8 * scale);
-            ctx.closePath();
-            ctx.fill();
+        // Metallic Body Shading
+        const bodyGrad = ctx.createLinearGradient(-bw / 2, 0, bw / 2, 0);
+        bodyGrad.addColorStop(0, '#111111');
+        bodyGrad.addColorStop(0.5, this.color);
+        bodyGrad.addColorStop(1, '#111111');
 
-            // Dark Windshield Cockpit
-            ctx.fillStyle = '#0b0b16';
-            ctx.beginPath();
-            ctx.moveTo(-bw / 4 + 2, -bh / 2 + 20 * scale);
-            ctx.lineTo(bw / 4 - 2, -bh / 2 + 20 * scale);
-            ctx.lineTo(bw / 3 - 4, -2);
-            ctx.lineTo(-bw / 3 + 4, -2);
-            ctx.closePath();
-            ctx.fill();
+        // Detailed Body Shape
+        ctx.fillStyle = bodyGrad;
+        ctx.beginPath();
+        ctx.moveTo(-bw / 2 + 10 * scale, bh / 2 - 8 * scale);
+        ctx.lineTo(-bw / 2 + 4 * scale, -5 * scale);
+        ctx.lineTo(-bw / 4, -bh / 2 + 15 * scale);
+        ctx.lineTo(bw / 4, -bh / 2 + 15 * scale);
+        ctx.lineTo(bw / 2 - 4 * scale, -5 * scale);
+        ctx.lineTo(bw / 2 - 10 * scale, bh / 2 - 8 * scale);
+        ctx.closePath();
+        ctx.fill();
 
-            // Detailed Wheels
-            ctx.fillStyle = '#111116';
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = Math.max(1, 1.5 * scale);
+        // Dark Windshield Cockpit
+        ctx.fillStyle = '#05050a';
+        ctx.beginPath();
+        ctx.moveTo(-bw / 4 + 2, -bh / 2 + 20 * scale);
+        ctx.lineTo(bw / 4 - 2, -bh / 2 + 20 * scale);
+        ctx.lineTo(bw / 3 - 4, -2);
+        ctx.lineTo(-bw / 3 + 4, -2);
+        ctx.closePath();
+        ctx.fill();
 
-            const wheelW = Math.max(3, 6 * scale);
-            const wheelH = Math.max(12, 22 * scale);
+        // Window Reflections
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = Math.max(1, 1.5 * scale);
+        ctx.beginPath();
+        ctx.moveTo(-bw / 6, -bh / 2 + 24 * scale);
+        ctx.lineTo(bw / 6, -bh / 2 + 24 * scale);
+        ctx.stroke();
 
-            // Front Left Wheel
-            ctx.fillRect(-bw / 2 - wheelW / 2, -bh / 3, wheelW, wheelH);
-            ctx.strokeRect(-bw / 2 - wheelW / 2, -bh / 3, wheelW, wheelH);
-            // Front Right Wheel
-            ctx.fillRect(bw / 2 - wheelW / 2, -bh / 3, wheelW, wheelH);
-            ctx.strokeRect(bw / 2 - wheelW / 2, -bh / 3, wheelW, wheelH);
-            // Rear Left Wheel
-            ctx.fillRect(-bw / 2 - wheelW / 2, bh / 6, wheelW, wheelH + 4 * scale);
-            ctx.strokeRect(-bw / 2 - wheelW / 2, bh / 6, wheelW, wheelH + 4 * scale);
-            // Rear Right Wheel
-            ctx.fillRect(bw / 2 - wheelW / 2, bh / 6, wheelW, wheelH + 4 * scale);
-            ctx.strokeRect(bw / 2 - wheelW / 2, bh / 6, wheelW, wheelH + 4 * scale);
+        // Detailed Wheels with glowing rims
+        ctx.fillStyle = '#111116';
+        ctx.strokeStyle = '#00f0ff';
+        ctx.lineWidth = Math.max(1, 1.5 * scale);
 
-            // Neon Headlights
-            ctx.shadowColor = '#00ffff';
-            ctx.shadowBlur = 10 * scale;
-            ctx.fillStyle = '#00ffff';
-            ctx.fillRect(-bw / 2 + 4 * scale, -bh / 2 + 10 * scale, Math.max(3, 10 * scale), Math.max(2, 4 * scale));
-            ctx.fillRect(bw / 2 - 14 * scale, -bh / 2 + 10 * scale, Math.max(3, 10 * scale), Math.max(2, 4 * scale));
+        const wheelW = Math.max(3, 6 * scale);
+        const wheelH = Math.max(12, 22 * scale);
 
-            // Neon Taillights
-            ctx.shadowColor = '#ff0000';
-            ctx.shadowBlur = 12 * scale;
-            ctx.fillStyle = '#ff0000';
-            ctx.fillRect(-bw / 2 + 4 * scale, bh / 2 - 10 * scale, Math.max(3, 10 * scale), Math.max(2, 4 * scale));
-            ctx.fillRect(bw / 2 - 14 * scale, bh / 2 - 10 * scale, Math.max(3, 10 * scale), Math.max(2, 4 * scale));
-        }
+        // Front Left Wheel
+        ctx.fillRect(-bw / 2 - wheelW / 2, -bh / 3, wheelW, wheelH);
+        ctx.strokeRect(-bw / 2 - wheelW / 2, -bh / 3, wheelW, wheelH);
+        // Front Right Wheel
+        ctx.fillRect(bw / 2 - wheelW / 2, -bh / 3, wheelW, wheelH);
+        ctx.strokeRect(bw / 2 - wheelW / 2, -bh / 3, wheelW, wheelH);
+        // Rear Left Wheel
+        ctx.fillRect(-bw / 2 - wheelW / 2, bh / 6, wheelW, wheelH + 4 * scale);
+        ctx.strokeRect(-bw / 2 - wheelW / 2, bh / 6, wheelW, wheelH + 4 * scale);
+        // Rear Right Wheel
+        ctx.fillRect(bw / 2 - wheelW / 2, bh / 6, wheelW, wheelH + 4 * scale);
+        ctx.strokeRect(bw / 2 - wheelW / 2, bh / 6, wheelW, wheelH + 4 * scale);
+
+        // Headlights (Cyan Glow)
+        ctx.shadowColor = '#00ffff';
+        ctx.shadowBlur = 10 * scale;
+        ctx.fillStyle = '#00ffff';
+        ctx.fillRect(-bw / 2 + 4 * scale, -bh / 2 + 10 * scale, Math.max(3, 10 * scale), Math.max(2, 4 * scale));
+        ctx.fillRect(bw / 2 - 14 * scale, -bh / 2 + 10 * scale, Math.max(3, 10 * scale), Math.max(2, 4 * scale));
+
+        // Brake Lights (Intense Red Glow)
+        ctx.shadowColor = '#ff0000';
+        ctx.shadowBlur = 12 * scale;
+        ctx.fillStyle = '#ff0000';
+        ctx.fillRect(-bw / 2 + 4 * scale, bh / 2 - 10 * scale, Math.max(3, 10 * scale), Math.max(2, 4 * scale));
+        ctx.fillRect(bw / 2 - 14 * scale, bh / 2 - 10 * scale, Math.max(3, 10 * scale), Math.max(2, 4 * scale));
 
         ctx.restore();
     }
@@ -903,7 +910,17 @@ class EnemyManager {
     }
 
     getRandomColor() {
-        const colors = ['#ffcc00', '#00f0ff', '#00ff66', '#ff0033', '#ffffff'];
+        // Exactly 8 professional cyberpunk colors as specified
+        const colors = [
+            '#ffcc00', // Yellow
+            '#00ff66', // Green
+            '#00f0ff', // Blue
+            '#9900ff', // Purple
+            '#ff6600', // Orange
+            '#ffffff', // White
+            '#ff0033', // Red
+            '#00ffff'  // Cyan
+        ];
         return colors[Math.floor(Math.random() * colors.length)];
     }
 
