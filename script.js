@@ -1,5 +1,5 @@
 /**
- * Lucky Nitro - Cyberpunk Road with Horizon Clipping & Professional EnemyManager
+ * Lucky Nitro - Cyberpunk Road with Professional Traffic AI & EnemyManager
  * script.js
  */
 
@@ -290,13 +290,13 @@ class PlayerCar {
 }
 
 /**
- * Individual Enemy Car Class with Horizon Visibility Clipping
+ * Individual Enemy Car Class with Strict Horizon Clipping
  */
 class EnemyCar {
     constructor(lane, progress, speed) {
         this.lane = lane;           // 0: Left, 1: Center, 2: Right
         this.progress = progress;   // Progress along road (negative = above horizon)
-        this.speed = speed;         // Natural movement speed
+        this.speed = speed;         // Randomized speed tier (slow, medium, fast)
     }
 
     update(difficultyMultiplier = 1) {
@@ -334,9 +334,10 @@ class EnemyCar {
     }
 
     draw(ctx, width, height) {
-        // Requirement 1 & 2: Enemy cars must spawn ABOVE the horizon but remain INVISIBLE.
-        // Only render/draw if progress >= 0 (i.e. at or below the horizon line).
-        if (this.progress < 0) return;
+        // Never render or draw enemy cars above the horizon
+        if (this.progress < 0) {
+            return;
+        }
 
         const bounds = this.getBounds(width, height);
 
@@ -385,73 +386,110 @@ class EnemyCar {
 }
 
 /**
- * Professional EnemyManager Architecture managing traffic, spacing, and difficulty scaling
+ * Professional Traffic AI & EnemyManager Architecture
  */
 class EnemyManager {
-    constructor(targetCount = 5) {
-        this.targetCount = targetCount;
+    constructor() {
         this.enemies = [];
+        this.spawnTimer = 0;
         this.init();
     }
 
     init() {
         this.enemies = [];
-        // Stagger initial enemies cleanly above and along the road to guarantee active cars emerging naturally
-        const initialProgressValues = [-0.1, -0.45, -0.8, -1.15, -1.5];
-        const lanes = [0, 1, 2, 0, 2];
+        // Spawn initial fleet of traffic cars with safe vertical spacing
+        const initialLanes = [0, 1, 2, 0, 2];
+        const initialProgress = [-0.1, -0.5, -0.9, -1.3, -1.7];
 
-        for (let i = 0; i < this.targetCount; i++) {
-            const lane = lanes[i];
-            const progress = initialProgressValues[i];
-            const speed = 0.007 + Math.random() * 0.006;
+        for (let i = 0; i < 5; i++) {
+            const lane = initialLanes[i];
+            const progress = initialProgress[i];
+            const speed = this.getRandomSpeed();
             this.enemies.push(new EnemyCar(lane, progress, speed));
         }
     }
 
+    getRandomSpeed() {
+        // Randomized speed tiers: slow, medium, fast
+        const speedTiers = [0.005, 0.008, 0.011];
+        return speedTiers[Math.floor(Math.random() * speedTiers.length)];
+    }
+
     update(difficultyMultiplier = 1) {
-        for (let i = 0; i < this.enemies.length; i++) {
+        // Update all existing enemies
+        for (let i = this.enemies.length - 1; i >= 0; i--) {
             let enemy = this.enemies[i];
             enemy.update(difficultyMultiplier);
 
-            // When an enemy leaves the screen, respawn it safely above the horizon with no overlap
-            if (enemy.progress > 1.1) {
-                this.respawnEnemy(enemy);
+            // Remove cars that have fully exited the bottom of the screen
+            if (enemy.progress > 1.2) {
+                this.enemies.splice(i, 1);
             }
         }
 
-        this.preventOverlaps();
+        // Traffic density scaling based on score / difficulty
+        this.spawnTimer++;
+        const currentDisplayScore = Math.floor(score / 10);
+        const difficultyLevel = Math.floor(currentDisplayScore / 20);
+        
+        // Spawn frequency becomes slightly more frequent as difficulty increases
+        const spawnInterval = Math.max(45, 90 - (difficultyLevel * 8));
+        const maxConcurrentCars = Math.min(8, 5 + Math.floor(difficultyLevel / 2));
+
+        if (this.spawnTimer >= spawnInterval && this.enemies.length < maxConcurrentCars) {
+            this.spawnTimer = 0;
+            this.trySpawnCar();
+        }
+
+        // Enforce strict lane separation and prevent car overlapping
+        this.preventLaneOverlaps();
     }
 
-    respawnEnemy(enemy) {
-        const lanes = [0, 1, 2];
-        let chosenLane = lanes[Math.floor(Math.random() * lanes.length)];
-        
-        let minProgress = -0.2;
-        for (let other of this.enemies) {
-            if (other !== enemy && other.lane === chosenLane) {
-                if (other.progress < minProgress) {
-                    minProgress = other.progress;
+    trySpawnCar() {
+        const availableLanes = [0, 1, 2];
+        // Shuffle lanes for randomness
+        availableLanes.sort(() => Math.random() - 0.5);
+
+        let chosenLane = -1;
+
+        for (let lane of availableLanes) {
+            // Check if lane is occupied near the horizon spawn point (progress between -0.4 and 0.1)
+            let laneOccupied = false;
+            for (let enemy of this.enemies) {
+                if (enemy.lane === lane && enemy.progress < 0.2 && enemy.progress > -0.5) {
+                    laneOccupied = true;
+                    break;
                 }
             }
+
+            if (!laneOccupied) {
+                chosenLane = lane;
+                break;
+            }
         }
 
-        enemy.lane = chosenLane;
-        enemy.progress = minProgress - (0.35 + Math.random() * 0.4);
-        enemy.speed = 0.007 + Math.random() * 0.006;
+        // If a valid open lane is found, spawn car cleanly at the horizon (progress = 0)
+        if (chosenLane !== -1) {
+            const speed = this.getRandomSpeed();
+            this.enemies.push(new EnemyCar(chosenLane, 0, speed));
+        }
+        // If all lanes are occupied near spawn, delay spawning naturally until space opens up
     }
 
-    preventOverlaps() {
+    preventLaneOverlaps() {
         for (let i = 0; i < this.enemies.length; i++) {
             for (let j = i + 1; j < this.enemies.length; j++) {
                 let e1 = this.enemies[i];
                 let e2 = this.enemies[j];
 
                 if (e1.lane === e2.lane) {
-                    if (Math.abs(e1.progress - e2.progress) < 0.3) {
+                    // Maintain safe minimum vertical distance between cars in the same lane
+                    const minDistance = 0.35;
+                    if (Math.abs(e1.progress - e2.progress) < minDistance) {
                         if (e1.progress < e2.progress) {
-                            e2.progress = e1.progress - 0.35;
+                            e2.progress = e1.progress + minDistance;
                         } else {
-                            e1.progress = e2.progress - 0.35;
+                            e1.progress = e2.progress + minDistance;
                         }
                     }
                 }
@@ -467,7 +505,7 @@ class EnemyManager {
 
     checkCollisions(playerBounds, width, height) {
         for (let i = 0; i < this.enemies.length; i++) {
-            // Only check collisions for cars that have crossed the horizon and are visible on screen
+            // Only check collisions for active cars visible on the road (progress >= 0)
             if (this.enemies[i].progress < 0) continue;
 
             let enemyBounds = this.enemies[i].getBounds(width, height);
@@ -487,7 +525,7 @@ class EnemyManager {
 // Initialize instances
 const road = new CyberpunkRoad();
 const playerCar = new PlayerCar();
-const enemyManager = new EnemyManager(5);
+const enemyManager = new EnemyManager();
 
 /**
  * Standard 60 FPS Game Loop
@@ -506,7 +544,7 @@ function gameLoop() {
     road.update(difficultyMultiplier);
     road.draw(ctx, canvas.width, canvas.height);
 
-    // Update and render all enemies via EnemyManager
+    // Update and render all enemies via EnemyManager traffic AI
     enemyManager.update(difficultyMultiplier);
     enemyManager.draw(ctx, canvas.width, canvas.height);
 
@@ -514,7 +552,7 @@ function gameLoop() {
     playerCar.update(canvas.width, canvas.height);
     playerCar.draw(ctx);
 
-    // Increment live score every frame while game is running (if not game over)
+    // Increment live score every frame while game is running
     if (!isGameOver) {
         score += 1;
     }
