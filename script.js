@@ -1,5 +1,5 @@
 /**
- * Lucky Nitro - Cyberpunk Road with Professional Sports Cars & EnemyManager
+ * Lucky Nitro - Cyberpunk City Background, Road, Sports Cars & Traffic AI
  * script.js
  */
 
@@ -31,6 +31,212 @@ function resizeCanvas() {
 
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
+
+/**
+ * Sky Class - Handles Night Sky, Stars, and Distant Fog
+ */
+class Sky {
+    constructor() {
+        this.stars = [];
+        this.initStars();
+    }
+
+    initStars() {
+        this.stars = [];
+        for (let i = 0; i < 120; i++) {
+            this.stars.push({
+                x: Math.random() * window.innerWidth,
+                y: Math.random() * (window.innerHeight * 0.4),
+                radius: Math.random() * 1.5 + 0.5,
+                alpha: Math.random(),
+                twinkleSpeed: Math.random() * 0.02 + 0.005
+            });
+        }
+    }
+
+    update() {
+        // Subtle twinkling effect
+        for (let star of this.stars) {
+            star.alpha += star.twinkleSpeed;
+            if (star.alpha > 1 || star.alpha < 0.2) {
+                star.twinkleSpeed *= -1;
+            }
+        }
+    }
+
+    draw(ctx, width, height) {
+        // Rich night sky vertical gradient
+        const skyGradient = ctx.createLinearGradient(0, 0, 0, height * 0.4);
+        skyGradient.addColorStop(0, '#05020a');
+        skyGradient.addColorStop(0.5, '#0b0b16');
+        skyGradient.addColorStop(1, '#150c24');
+
+        ctx.fillStyle = skyGradient;
+        ctx.fillRect(0, 0, width, height * 0.4);
+
+        // Draw twinkling stars
+        ctx.save();
+        for (let star of this.stars) {
+            ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0.1, Math.min(1, star.alpha))})`;
+            ctx.beginPath();
+            ctx.arc(star.x % width, star.y, star.radius, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
+    }
+}
+
+/**
+ * Building Class - Represents an Individual Skyscraper in the City Skyline
+ */
+class Building {
+    constructor(x, width, height, colorTheme) {
+        this.x = x;
+        this.width = width;
+        this.height = height;
+        this.colorTheme = colorTheme; // 'cyan', 'pink', or 'purple'
+        this.windows = this.generateWindows();
+        this.hasRooftopAntenna = Math.random() > 0.6;
+        this.blinkingLightOffset = Math.random() * Math.PI * 2;
+    }
+
+    generateWindows() {
+        const windows = [];
+        const rows = Math.floor((this.height - 30) / 18);
+        const cols = Math.max(2, Math.floor((this.width - 12) / 10));
+
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                if (Math.random() > 0.35) { // Active lit windows
+                    windows.push({
+                        x: 6 + c * 10,
+                        y: 20 + r * 18,
+                        w: 5,
+                        h: 10
+                    });
+                }
+            }
+        }
+        return windows;
+    }
+
+    draw(ctx, baseY) {
+        const buildingY = baseY - this.height;
+
+        ctx.save();
+        ctx.translate(this.x, buildingY);
+
+        // Building Silhouette Fill
+        ctx.fillStyle = '#0d0814';
+        ctx.fillRect(0, 0, this.width, this.height);
+
+        // Neon outline/glow based on theme
+        let neonColor = '#00f0ff';
+        if (this.colorTheme === 'pink') neonColor = '#ff007f';
+        if (this.colorTheme === 'purple') neonColor = '#9900ff';
+
+        ctx.strokeStyle = neonColor;
+        ctx.lineWidth = 1.5;
+        ctx.shadowColor = neonColor;
+        ctx.shadowBlur = 8;
+        ctx.strokeRect(0, 0, this.width, this.height);
+
+        // Lit Windows
+        ctx.fillStyle = neonColor;
+        ctx.shadowBlur = 4;
+        for (let win of this.windows) {
+            ctx.fillRect(win.x, win.y, win.w, win.h);
+        }
+
+        // Rooftop antenna & blinking beacon
+        if (this.hasRooftopAntenna) {
+            ctx.strokeStyle = '#555577';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(this.width / 2, 0);
+            ctx.lineTo(this.width / 2, -25);
+            ctx.stroke();
+
+            // Blinking rooftop warning light
+            const blink = Math.sin(Date.now() * 0.005 + this.blinkingLightOffset);
+            if (blink > 0) {
+                ctx.fillStyle = '#ff0033';
+                ctx.shadowColor = '#ff0033';
+                ctx.shadowBlur = 12;
+                ctx.beginPath();
+                ctx.arc(this.width / 2, -25, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        ctx.restore();
+    }
+}
+
+/**
+ * CityBackground Class - Manages the Parallax Scrolling Cyberpunk Skyline
+ */
+class CityBackground {
+    constructor() {
+        this.buildings = [];
+        this.offsetX = 0;
+        this.speed = 0.5; // Very slow parallax scrolling speed
+        this.initBuildings();
+    }
+
+    initBuildings() {
+        this.buildings = [];
+        let currentX = -100;
+        const totalWidth = window.innerWidth + 400;
+
+        while (currentX < totalWidth) {
+            const width = Math.floor(Math.random() * 50) + 70; // Building width 70-120px
+            const height = Math.floor(Math.random() * 140) + 90; // Building height 90-230px
+            const themes = ['cyan', 'pink', 'purple'];
+            const colorTheme = themes[Math.floor(Math.random() * themes.length)];
+
+            this.buildings.push(new Building(currentX, width, height, colorTheme));
+            currentX += width + Math.floor(Math.random() * 15) + 5; // Spacing between buildings
+        }
+    }
+
+    update(speedMultiplier = 1) {
+        this.offsetX += this.speed * speedMultiplier;
+
+        // Infinite seamless loop wrapping
+        const firstBuilding = this.buildings[0];
+        if (firstBuilding && this.offsetX >= firstBuilding.width + 50) {
+            this.offsetX = 0;
+            // Shift first building to the end
+            const shifted = this.buildings.shift();
+            const lastBuilding = this.buildings[this.buildings.length - 1];
+            shifted.x = lastBuilding.x + lastBuilding.width + Math.floor(Math.random() * 15) + 5;
+            this.buildings.push(shifted);
+        }
+    }
+
+    draw(ctx, width, height) {
+        const horizonY = height * 0.35;
+
+        ctx.save();
+        // Apply parallax offset translation
+        ctx.translate(-this.offsetX, 0);
+
+        for (let building of this.buildings) {
+            building.draw(ctx, horizonY);
+        }
+
+        ctx.restore();
+
+        // Soft atmospheric fog gradient near the horizon
+        const fogGradient = ctx.createLinearGradient(0, horizonY - 40, 0, horizonY + 20);
+        fogGradient.addColorStop(0, 'rgba(11, 11, 22, 0)');
+        fogGradient.addColorStop(1, 'rgba(11, 11, 22, 0.85)');
+
+        ctx.fillStyle = fogGradient;
+        ctx.fillRect(0, horizonY - 40, width, 60);
+    }
+}
 
 /**
  * Cyberpunk Road Renderer with Perspective Projection
@@ -455,14 +661,12 @@ class EnemyManager {
     }
 
     getRandomColor() {
-        // Requirement 9: Enemy cars should have random colors (yellow, blue, green, red, white)
         const colors = ['#ffcc00', '#00f0ff', '#00ff66', '#ff0033', '#ffffff'];
         return colors[Math.floor(Math.random() * colors.length)];
     }
 
     init() {
         this.enemies = [];
-        // Spawn initial fleet of traffic cars with safe vertical spacing
         const initialLanes = [0, 1, 2, 0, 2];
         const initialProgress = [-0.1, -0.5, -0.9, -1.3, -1.7];
 
@@ -476,29 +680,24 @@ class EnemyManager {
     }
 
     getRandomSpeed() {
-        // Randomized speed tiers: slow, medium, fast
         const speedTiers = [0.005, 0.008, 0.011];
         return speedTiers[Math.floor(Math.random() * speedTiers.length)];
     }
 
     update(difficultyMultiplier = 1) {
-        // Update all existing enemies
         for (let i = this.enemies.length - 1; i >= 0; i--) {
             let enemy = this.enemies[i];
             enemy.update(difficultyMultiplier);
 
-            // Remove cars that have fully exited the bottom of the screen
             if (enemy.progress > 1.2) {
                 this.enemies.splice(i, 1);
             }
         }
 
-        // Traffic density scaling based on score / difficulty
         this.spawnTimer++;
         const currentDisplayScore = Math.floor(score / 10);
         const difficultyLevel = Math.floor(currentDisplayScore / 20);
         
-        // Spawn frequency becomes slightly more frequent as difficulty increases
         const spawnInterval = Math.max(45, 90 - (difficultyLevel * 8));
         const maxConcurrentCars = Math.min(8, 5 + Math.floor(difficultyLevel / 2));
 
@@ -507,19 +706,16 @@ class EnemyManager {
             this.trySpawnCar();
         }
 
-        // Enforce strict lane separation and prevent car overlapping
         this.preventLaneOverlaps();
     }
 
     trySpawnCar() {
         const availableLanes = [0, 1, 2];
-        // Shuffle lanes for randomness
         availableLanes.sort(() => Math.random() - 0.5);
 
         let chosenLane = -1;
 
         for (let lane of availableLanes) {
-            // Check if lane is occupied near the horizon spawn point (progress between -0.5 and 0.2)
             let laneOccupied = false;
             for (let enemy of this.enemies) {
                 if (enemy.lane === lane && enemy.progress < 0.2 && enemy.progress > -0.5) {
@@ -534,13 +730,11 @@ class EnemyManager {
             }
         }
 
-        // If a valid open lane is found, spawn car cleanly at the horizon (progress = 0)
         if (chosenLane !== -1) {
             const speed = this.getRandomSpeed();
             const color = this.getRandomColor();
             this.enemies.push(new EnemyCar(chosenLane, 0, speed, color));
         }
-        // If all lanes are occupied near spawn, delay spawning naturally until space opens up
     }
 
     preventLaneOverlaps() {
@@ -550,7 +744,6 @@ class EnemyManager {
                 let e2 = this.enemies[j];
 
                 if (e1.lane === e2.lane) {
-                    // Maintain safe minimum vertical distance between cars in the same lane
                     const minDistance = 0.35;
                     if (Math.abs(e1.progress - e2.progress) < minDistance) {
                         if (e1.progress < e2.progress) {
@@ -572,7 +765,6 @@ class EnemyManager {
 
     checkCollisions(playerBounds, width, height) {
         for (let i = 0; i < this.enemies.length; i++) {
-            // Only check collisions for active cars visible on the road (progress >= 0)
             if (this.enemies[i].progress < 0) continue;
 
             let enemyBounds = this.enemies[i].getBounds(width, height);
@@ -590,6 +782,8 @@ class EnemyManager {
 }
 
 // Initialize instances
+const sky = new Sky();
+const cityBackground = new CityBackground();
 const road = new CyberpunkRoad();
 const playerCar = new PlayerCar();
 const enemyManager = new EnemyManager();
@@ -607,15 +801,23 @@ function gameLoop() {
     const difficultyLevel = Math.floor(currentDisplayScore / 20);
     const difficultyMultiplier = 1 + (difficultyLevel * 0.15);
 
-    // Update and render the perspective road with speed scaling
+    // 1. Draw Night Sky and Stars (Static / Fixed)
+    sky.update();
+    sky.draw(ctx, canvas.width, canvas.height);
+
+    // 2. Draw Animated Cyberpunk City Background (Parallax scrolling slower than road)
+    cityBackground.update(difficultyMultiplier);
+    cityBackground.draw(ctx, canvas.width, canvas.height);
+
+    // 3. Draw Perspective Road (Drawn BEFORE cars, AFTER city)
     road.update(difficultyMultiplier);
     road.draw(ctx, canvas.width, canvas.height);
 
-    // Update and render all enemies via EnemyManager traffic AI
+    // 4. Update and render all enemies via EnemyManager traffic AI
     enemyManager.update(difficultyMultiplier);
     enemyManager.draw(ctx, canvas.width, canvas.height);
 
-    // Update and render the player car
+    // 5. Update and render the player car
     playerCar.update(canvas.width, canvas.height);
     playerCar.draw(ctx);
 
