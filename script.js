@@ -1,6 +1,6 @@
 /**
  * Lucky Nitro - Cyberpunk City Background, Upgraded Speed Road, Professional Endless Racing AI,
- * Coin Collection, Garage System & Professional Sound System
+ * Coin Collection & Garage System
  * script.js
  */
 
@@ -24,288 +24,6 @@ let playerCrashBackward = 0;
 let smokeParticles = [];
 let isFlashingRed = true;
 let flashTimer = 0;
-
-/**
- * AudioManager Class - Centralized Audio & Sound System Manager using Web Audio API & HTML5 Audio
- */
-class AudioManager {
-    constructor() {
-        this.masterVolume = parseFloat(localStorage.getItem('luckyNitroMasterVol')) ?? 0.8;
-        this.musicVolume = parseFloat(localStorage.getItem('luckyNitroMusicVol')) ?? 0.4;
-        this.effectsVolume = parseFloat(localStorage.getItem('luckyNitroEffectsVol')) ?? 0.8;
-
-        this.audioCtx = null;
-        this.musicGain = null;
-        this.effectsGain = null;
-
-        this.synthwaveMusic = null;
-        this.isMusicPlaying = false;
-
-        this.engineOscillator = null;
-        this.engineGain = null;
-        this.isEngineRunning = false;
-
-        this.nitroNoiseNode = null;
-        this.nitroGain = null;
-        this.isNitroPlaying = false;
-
-        this.initAudioContext();
-        this.initMusic();
-    }
-
-    initAudioContext() {
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        if (AudioContextClass) {
-            this.audioCtx = new AudioContextClass();
-        }
-    }
-
-    ensureContext() {
-        if (this.audioCtx && this.audioCtx.state === 'suspended') {
-            this.audioCtx.resume();
-        }
-    }
-
-    initMusic() {
-        // Generating procedural Cyberpunk Synthwave Backing Loop using Web Audio API oscillators and gain nodes
-        // This guarantees no missing external asset issues and precise performance control.
-    }
-
-    startMusic() {
-        this.ensureContext();
-        if (this.isMusicPlaying || !this.audioCtx) return;
-        this.isMusicPlaying = true;
-
-        // Play synthwave background chords loop
-        this.playSynthwaveChordLoop();
-    }
-
-    playSynthwaveChordLoop() {
-        if (!this.isMusicPlaying || !this.audioCtx) return;
-
-        const now = this.audioCtx.currentTime;
-        const chordProgression = [
-            [220, 261.63, 329.63, 392], // A minor
-            [174.61, 220, 261.63, 329.63], // F major
-            [130.81, 164.81, 196, 246.94], // C major
-            [196, 246.94, 293.66, 349.23]  // G major
-        ];
-
-        // Schedule notes
-        const chordDuration = 2.0;
-        this.chordTimeout = setTimeout(() => {
-            if (this.isMusicPlaying) {
-                this.playSynthwaveChordLoop();
-            }
-        }, chordDuration * 1000);
-    }
-
-    stopMusic() {
-        this.isMusicPlaying = false;
-        if (this.chordTimeout) {
-            clearTimeout(this.chordTimeout);
-        }
-    }
-
-    pauseMusic() {
-        this.stopMusic();
-    }
-
-    resumeMusic() {
-        this.startMusic();
-    }
-
-    playClickSound() {
-        this.ensureContext();
-        if (!this.audioCtx) return;
-
-        const osc = this.audioCtx.createOscillator();
-        const gain = this.audioCtx.createGain();
-
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(600, this.audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(300, this.audioCtx.currentTime + 0.05);
-
-        const effectiveVol = this.masterVolume * this.effectsVolume * 0.3;
-        gain.gain.setValueAtTime(effectiveVol, this.audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + 0.05);
-
-        osc.connect(gain);
-        gain.connect(this.audioCtx.destination);
-
-        osc.start();
-        osc.stop(this.audioCtx.currentTime + 0.05);
-    }
-
-    playCoinSound() {
-        this.ensureContext();
-        if (!this.audioCtx) return;
-
-        const osc = this.audioCtx.createOscillator();
-        const gain = this.audioCtx.createGain();
-
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(800, this.audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(1400, this.audioCtx.currentTime + 0.12);
-
-        const effectiveVol = this.masterVolume * this.effectsVolume * 0.5;
-        gain.gain.setValueAtTime(effectiveVol, this.audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + 0.12);
-
-        osc.connect(gain);
-        gain.connect(this.audioCtx.destination);
-
-        osc.start();
-        osc.stop(this.audioCtx.currentTime + 0.12);
-    }
-
-    playCrashSound() {
-        this.ensureContext();
-        if (!this.audioCtx) return;
-
-        // Create white noise explosion sound
-        const bufferSize = this.audioCtx.sampleRate * 0.8;
-        const buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) {
-            data[i] = Math.random() * 2 - 1;
-        }
-
-        const noise = this.audioCtx.createBufferSource();
-        noise.buffer = buffer;
-
-        const filter = this.audioCtx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(400, this.audioCtx.currentTime);
-        filter.frequency.linearRampToValueAtTime(50, this.audioCtx.currentTime + 0.8);
-
-        const gain = this.audioCtx.createGain();
-        const effectiveVol = this.masterVolume * this.effectsVolume * 0.8;
-        gain.gain.setValueAtTime(effectiveVol, this.audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + 0.8);
-
-        noise.connect(filter);
-        filter.connect(gain);
-        gain.connect(this.audioCtx.destination);
-
-        noise.start();
-        noise.stop(this.audioCtx.currentTime + 0.8);
-    }
-
-    startEngineSound() {
-        this.ensureContext();
-        if (this.isEngineRunning || !this.audioCtx) return;
-        this.isEngineRunning = true;
-
-        this.engineOscillator = this.audioCtx.createOscillator();
-        this.engineGain = this.audioCtx.createGain();
-
-        this.engineOscillator.type = 'sawtooth';
-        this.engineOscillator.frequency.setValueAtTime(70, this.audioCtx.currentTime);
-
-        const effectiveVol = this.masterVolume * this.effectsVolume * 0.2;
-        this.engineGain.gain.setValueAtTime(effectiveVol, this.audioCtx.currentTime);
-
-        this.engineOscillator.connect(this.engineGain);
-        this.engineGain.connect(this.audioCtx.destination);
-
-        this.engineOscillator.start();
-    }
-
-    updateEnginePitch(speedRatio) {
-        if (!this.isEngineRunning || !this.engineOscillator || !this.audioCtx) return;
-        const targetFreq = 60 + (speedRatio * 140);
-        this.engineOscillator.frequency.setTargetAtTime(targetFreq, this.audioCtx.currentTime, 0.1);
-        
-        if (this.engineGain) {
-            const effectiveVol = this.masterVolume * this.effectsVolume * 0.2;
-            this.engineGain.gain.setTargetAtTime(effectiveVol, this.audioCtx.currentTime, 0.1);
-        }
-    }
-
-    stopEngineSound() {
-        if (!this.isEngineRunning) return;
-        this.isEngineRunning = false;
-        if (this.engineOscillator) {
-            try {
-                this.engineOscillator.stop();
-            } catch (e) {}
-            this.engineOscillator = null;
-        }
-    }
-
-    startNitroSound() {
-        this.ensureContext();
-        if (this.isNitroPlaying || !this.audioCtx) return;
-        this.isNitroPlaying = true;
-
-        const bufferSize = this.audioCtx.sampleRate * 3.0;
-        const buffer = this.audioCtx.createBuffer(1, bufferSize, this.audioCtx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) {
-            data[i] = Math.random() * 2 - 1;
-        }
-
-        const noise = this.audioCtx.createBufferSource();
-        noise.buffer = buffer;
-        noise.loop = true;
-
-        const filter = this.audioCtx.createBiquadFilter();
-        filter.type = 'bandpass';
-        filter.frequency.setValueAtTime(1000, this.audioCtx.currentTime);
-        filter.Q.setValueAtTime(3, this.audioCtx.currentTime);
-
-        const gain = this.audioCtx.createGain();
-        const effectiveVol = this.masterVolume * this.effectsVolume * 0.4;
-        gain.gain.setValueAtTime(effectiveVol, this.audioCtx.currentTime);
-
-        noise.connect(filter);
-        filter.connect(gain);
-        gain.connect(this.audioCtx.destination);
-
-        noise.start();
-        this.nitroNoiseNode = noise;
-        this.nitroGain = gain;
-    }
-
-    stopNitroSound() {
-        if (!this.isNitroPlaying) return;
-        this.isNitroPlaying = false;
-        if (this.nitroGain && this.audioCtx) {
-            this.nitroGain.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + 0.2);
-            setTimeout(() => {
-                if (this.nitroNoiseNode) {
-                    try {
-                        this.nitroNoiseNode.stop();
-                    } catch (e) {}
-                    this.nitroNoiseNode = null;
-                }
-            }, 200);
-        } else if (this.nitroNoiseNode) {
-            try {
-                this.nitroNoiseNode.stop();
-            } catch (e) {}
-            this.nitroNoiseNode = null;
-        }
-    }
-
-    setMasterVolume(val) {
-        this.masterVolume = Math.max(0, Math.min(1, val));
-        localStorage.setItem('luckyNitroMasterVol', this.masterVolume);
-    }
-
-    setMusicVolume(val) {
-        this.musicVolume = Math.max(0, Math.min(1, val));
-        localStorage.setItem('luckyNitroMusicVol', this.musicVolume);
-    }
-
-    setEffectsVolume(val) {
-        this.effectsVolume = Math.max(0, Math.min(1, val));
-        localStorage.setItem('luckyNitroEffectsVol', this.effectsVolume);
-    }
-}
-
-const audioManager = new AudioManager();
 
 // Handle canvas resizing to match window dimensions
 function resizeCanvas() {
@@ -736,7 +454,6 @@ class PlayerCar {
         this.nitroTimer = 0;
         this.keys.left = false;
         this.keys.right = false;
-        audioManager.stopNitroSound();
     }
 
     setupListeners() {
@@ -771,7 +488,6 @@ class PlayerCar {
         if (!isGameOver && this.nitroMeter > 0 && !this.isNitroActive) {
             this.isNitroActive = true;
             this.nitroTimer = this.maxNitroFrames;
-            audioManager.startNitroSound();
         }
     }
 
@@ -799,7 +515,6 @@ class PlayerCar {
 
         const handleMobileNitro = (e) => {
             e.preventDefault();
-            audioManager.playClickSound();
             this.mobileNitroPressed = true;
             this.tryActivateNitro();
         };
@@ -830,7 +545,6 @@ class PlayerCar {
             if (this.nitroTimer <= 0 || this.nitroMeter <= 0) {
                 this.isNitroActive = false;
                 this.nitroTimer = 0;
-                audioManager.stopNitroSound();
             }
         } else {
             if (this.nitroMeter < 100 && !isGameOver) {
@@ -854,10 +568,6 @@ class PlayerCar {
         if (Math.abs(this.vx) < 0.05) this.vx = 0;
 
         this.x += this.vx;
-
-        // Update engine sound pitch based on speed
-        const speedRatio = Math.abs(this.vx) / currentMaxSpeed;
-        audioManager.updateEnginePitch(speedRatio);
 
         const bottomRoadWidth = canvasWidth * 0.55;
         const roadLeft = (canvasWidth - bottomRoadWidth) / 2;
@@ -1024,12 +734,12 @@ class PlayerCar {
  */
 class EnemyCar {
     constructor(type, lane, progress, speed, color) {
-        this.type = type;
-        this.lane = lane;
+        this.type = type; // 'Sports car', 'Sedan', 'SUV', 'Truck', 'Bus'
+        this.lane = lane; // 0, 1, 2
         this.targetLane = lane;
-        this.laneProgress = 0;
+        this.laneProgress = 0; // 0 (current lane) to 1 or -1 (target lane offset)
         this.isChangingLane = false;
-        this.progress = progress;
+        this.progress = progress; // vertical road progress (0 to 1+)
         this.speed = speed;
         this.color = color;
         this.laneChangeTimer = Math.floor(Math.random() * 150) + 100;
@@ -1039,6 +749,7 @@ class EnemyCar {
         if (!isGameOver) {
             this.progress += this.speed * difficultyMultiplier;
 
+            // Handle lane shifting smoothly
             if (this.isChangingLane) {
                 const shiftSpeed = 0.05;
                 if (this.targetLane > this.lane) {
@@ -1057,9 +768,11 @@ class EnemyCar {
                     }
                 }
             } else {
+                // Countdown for occasional lane change
                 this.laneChangeTimer--;
                 if (this.laneChangeTimer <= 0) {
                     this.laneChangeTimer = Math.floor(Math.random() * 200) + 150;
+                    // Trigger lane change decision externally via EnemyManager or self if safe
                 }
             }
         }
@@ -1094,6 +807,7 @@ class EnemyCar {
 
         const effectiveLane = this.getEffectiveLane();
         const laneMultipliers = [0.25, 0.50, 0.75];
+        // interpolate between lanes smoothly
         let lanePosMultiplier = 0.50;
         if (effectiveLane <= 0) lanePosMultiplier = laneMultipliers[0];
         else if (effectiveLane >= 2) lanePosMultiplier = laneMultipliers[2];
@@ -1195,7 +909,7 @@ class EnemyManager {
 
     getRandomType() {
         const types = ['Sports car', 'Sedan', 'SUV', 'Truck', 'Bus'];
-        const weights = [0.3, 0.3, 0.2, 0.1, 0.1];
+        const weights = [0.3, 0.3, 0.2, 0.1, 0.1]; // Probability weights
         let randomVal = Math.random();
         let cumulative = 0;
         for (let i = 0; i < types.length; i++) {
@@ -1235,6 +949,7 @@ class EnemyManager {
             const currentDisplayScore = Math.floor(score / 10);
             const difficultyLevel = Math.floor(currentDisplayScore / 20);
             
+            // Difficulty increases: faster spawning & more traffic
             const spawnInterval = Math.max(30, 80 - (difficultyLevel * 6));
             const maxConcurrentCars = Math.min(10, 5 + Math.floor(difficultyLevel / 1.5));
 
@@ -1269,6 +984,8 @@ class EnemyManager {
         }
 
         if (chosenLane !== -1) {
+            // Prevent impossible situations where all lanes become blocked
+            // Check if spawning this car would block all 3 lanes completely at the start
             let simulatedLanesBlocked = [false, false, false];
             simulatedLanesBlocked[chosenLane] = true;
             for (let enemy of this.enemies) {
@@ -1277,7 +994,7 @@ class EnemyManager {
                 }
             }
             if (simulatedLanesBlocked[0] && simulatedLanesBlocked[1] && simulatedLanesBlocked[2]) {
-                return;
+                return; // Skip spawn to prevent unbeatable wall
             }
 
             const type = this.getRandomType();
@@ -1291,6 +1008,7 @@ class EnemyManager {
 
     manageTrafficAI() {
         for (let enemy of this.enemies) {
+            // Handle occasional safe lane changes
             if (!enemy.isChangingLane && enemy.laneChangeTimer <= 0) {
                 const possibleTargetLanes = [];
                 if (enemy.lane > 0) possibleTargetLanes.push(enemy.lane - 1);
@@ -1298,6 +1016,7 @@ class EnemyManager {
 
                 if (possibleTargetLanes.length > 0) {
                     const target = possibleTargetLanes[Math.floor(Math.random() * possibleTargetLanes.length)];
+                    // Verify if target lane is safe (no cars nearby)
                     let targetLaneSafe = true;
                     for (let other of this.enemies) {
                         if (other !== enemy && other.lane === target && Math.abs(other.progress - enemy.progress) < 0.35) {
@@ -1315,6 +1034,7 @@ class EnemyManager {
             }
         }
 
+        // Vehicles must never overlap
         for (let i = 0; i < this.enemies.length; i++) {
             for (let j = i + 1; j < this.enemies.length; j++) {
                 let e1 = this.enemies[i];
@@ -1498,7 +1218,6 @@ class CoinManager {
                 coin.collected = true;
                 coinsCount++;
                 localStorage.setItem('luckyNitroCoins', coinsCount);
-                audioManager.playCoinSound();
 
                 floatingTexts.push({
                     x: coinBounds.x + coinBounds.width / 2,
@@ -1507,6 +1226,21 @@ class CoinManager {
                     alpha: 1,
                     vy: -1.5
                 });
+
+                try {
+                    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
+                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.1);
+                } catch (e) {}
             }
         }
     }
@@ -1560,117 +1294,6 @@ const playerCar = new PlayerCar();
 const enemyManager = new EnemyManager();
 const coinManager = new CoinManager();
 const rain = new RainEffect();
-
-// Setup Settings Modal Overlay with Volume Sliders
-const settingsContainer = document.createElement('div');
-settingsContainer.id = 'settingsContainer';
-settingsContainer.style.position = 'fixed';
-settingsContainer.style.top = '0';
-settingsContainer.style.left = '0';
-settingsContainer.style.width = '100vw';
-settingsContainer.style.height = '100vh';
-settingsContainer.style.display = 'none';
-settingsContainer.style.justifyContent = 'center';
-settingsContainer.style.alignItems = 'center';
-settingsContainer.style.zIndex = '4000';
-settingsContainer.style.background = 'rgba(0, 0, 0, 0.85)';
-settingsContainer.style.backdropFilter = 'blur(8px)';
-
-function renderSettingsHTML() {
-    settingsContainer.innerHTML = `
-        <div style="
-            background: linear-gradient(135deg, #0f0c1b, #1a102f);
-            border: 2px solid #00f0ff;
-            box-shadow: 0 0 40px rgba(0, 240, 255, 0.5);
-            padding: 35px;
-            border-radius: 20px;
-            text-align: center;
-            width: 380px;
-            font-family: 'sans-serif';
-            color: #ffffff;
-        ">
-            <h2 style="margin-top: 0; font-size: 32px; color: #00f0ff; text-shadow: 0 0 12px #00f0ff; margin-bottom: 25px;">SETTINGS</h2>
-            
-            <div style="display: flex; flex-direction: column; gap: 20px; text-align: left; margin-bottom: 30px;">
-                <div>
-                    <label style="font-size: 14px; color: #00f0ff; display: block; margin-bottom: 8px;">Master Volume: <span id="masterValText">${Math.round(audioManager.masterVolume * 100)}%</span></label>
-                    <input type="range" id="masterVolSlider" min="0" max="1" step="0.05" value="${audioManager.masterVolume}" style="width: 100%; cursor: pointer;">
-                </div>
-                <div>
-                    <label style="font-size: 14px; color: #ff007f; display: block; margin-bottom: 8px;">Music Volume: <span id="musicValText">${Math.round(audioManager.musicVolume * 100)}%</span></label>
-                    <input type="range" id="musicVolSlider" min="0" max="1" step="0.05" value="${audioManager.musicVolume}" style="width: 100%; cursor: pointer;">
-                </div>
-                <div>
-                    <label style="font-size: 14px; color: #ffcc00; display: block; margin-bottom: 8px;">Effects Volume: <span id="effectsValText">${Math.round(audioManager.effectsVolume * 100)}%</span></label>
-                    <input type="range" id="effectsVolSlider" min="0" max="1" step="0.05" value="${audioManager.effectsVolume}" style="width: 100%; cursor: pointer;">
-                </div>
-            </div>
-
-            <button id="closeSettingsBtn" style="
-                background: linear-gradient(135deg, #ff007f, #9900ff);
-                color: #ffffff;
-                border: none;
-                padding: 12px 30px;
-                font-size: 16px;
-                font-weight: bold;
-                border-radius: 10px;
-                cursor: pointer;
-                box-shadow: 0 0 15px rgba(255, 0, 127, 0.6);
-                width: 100%;
-            ">BACK</button>
-        </div>
-    `;
-
-    document.getElementById('masterVolSlider').addEventListener('input', (e) => {
-        const val = parseFloat(e.target.value);
-        audioManager.setMasterVolume(val);
-        document.getElementById('masterValText').textContent = `${Math.round(val * 100)}%`;
-    });
-
-    document.getElementById('musicVolSlider').addEventListener('input', (e) => {
-        const val = parseFloat(e.target.value);
-        audioManager.setMusicVolume(val);
-        document.getElementById('musicValText').textContent = `${Math.round(val * 100)}%`;
-    });
-
-    document.getElementById('effectsVolSlider').addEventListener('input', (e) => {
-        const val = parseFloat(e.target.value);
-        audioManager.setEffectsVolume(val);
-        document.getElementById('effectsValText').textContent = `${Math.round(val * 100)}%`;
-    });
-
-    document.getElementById('closeSettingsBtn').addEventListener('click', () => {
-        audioManager.playClickSound();
-        settingsContainer.style.display = 'none';
-    });
-}
-document.body.appendChild(settingsContainer);
-
-// Setup HUD Settings Button
-const hudSettingsBtn = document.createElement('div');
-hudSettingsBtn.id = 'hudSettingsBtn';
-hudSettingsBtn.innerHTML = '⚙️ SETTINGS';
-hudSettingsBtn.style.position = 'fixed';
-hudSettingsBtn.style.top = '30px';
-hudSettingsBtn.style.left = '340px';
-hudSettingsBtn.style.padding = '8px 15px';
-hudSettingsBtn.style.background = 'linear-gradient(135deg, #00f0ff, #0055ff)';
-hudSettingsBtn.style.color = '#ffffff';
-hudSettingsBtn.style.fontFamily = 'sans-serif';
-hudSettingsBtn.style.fontWeight = 'bold';
-hudSettingsBtn.style.fontSize = '14px';
-hudSettingsBtn.style.borderRadius = '8px';
-hudSettingsBtn.style.boxShadow = '0 0 10px rgba(0, 240, 255, 0.5)';
-hudSettingsBtn.style.zIndex = '1000';
-hudSettingsBtn.style.cursor = 'pointer';
-hudSettingsBtn.style.userSelect = 'none';
-
-hudSettingsBtn.addEventListener('click', () => {
-    audioManager.playClickSound();
-    renderSettingsHTML();
-    settingsContainer.style.display = 'flex';
-});
-document.body.appendChild(hudSettingsBtn);
 
 // Setup DOM overlay for Game Over professional panel & buttons
 const gameOverContainer = document.createElement('div');
@@ -1859,7 +1482,6 @@ function renderGarageHTML() {
 
     garageContainer.querySelectorAll('.selectCarBtn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            audioManager.playClickSound();
             const carName = e.target.getAttribute('data-car');
             localStorage.setItem('luckyNitroSelectedCar', carName);
             renderGarageHTML();
@@ -1868,7 +1490,6 @@ function renderGarageHTML() {
 
     garageContainer.querySelectorAll('.buyCarBtn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            audioManager.playClickSound();
             const carName = e.target.getAttribute('data-car');
             const carPrice = parseInt(e.target.getAttribute('data-price'));
 
@@ -1889,7 +1510,6 @@ function renderGarageHTML() {
     });
 
     document.getElementById('closeGarageBtn').addEventListener('click', () => {
-        audioManager.playClickSound();
         garageContainer.style.display = 'none';
     });
 }
@@ -1902,7 +1522,6 @@ const goFinalScore = document.getElementById('goFinalScore');
 const goBestScore = document.getElementById('goBestScore');
 
 const restartGame = () => {
-    audioManager.playClickSound();
     isGameOver = false;
     score = 0;
     crashTimer = 0;
@@ -1915,32 +1534,26 @@ const restartGame = () => {
     coinManager.reset();
     floatingTexts = [];
     gameOverContainer.style.display = 'none';
-    audioManager.startEngineSound();
-    audioManager.resumeMusic();
 };
 
 playAgainBtn.addEventListener('click', restartGame);
 playAgainBtn.addEventListener('touchstart', (e) => { e.preventDefault(); restartGame(); });
 
 garageBtn.addEventListener('click', () => {
-    audioManager.playClickSound();
     renderGarageHTML();
     garageContainer.style.display = 'flex';
 });
 garageBtn.addEventListener('touchstart', (e) => {
     e.preventDefault();
-    audioManager.playClickSound();
     renderGarageHTML();
     garageContainer.style.display = 'flex';
 });
 
 mainMenuBtn.addEventListener('click', () => {
-    audioManager.playClickSound();
     alert('Main Menu placeholder clicked!');
 });
 mainMenuBtn.addEventListener('touchstart', (e) => {
     e.preventDefault();
-    audioManager.playClickSound();
     alert('Main Menu placeholder clicked!');
 });
 
@@ -1963,19 +1576,10 @@ hudGarageBtn.style.cursor = 'pointer';
 hudGarageBtn.style.userSelect = 'none';
 
 hudGarageBtn.addEventListener('click', () => {
-    audioManager.playClickSound();
     renderGarageHTML();
     garageContainer.style.display = 'flex';
 });
 document.body.appendChild(hudGarageBtn);
-
-// Start background music and engine sound on first user interaction
-window.addEventListener('pointerdown', () => {
-    audioManager.startMusic();
-    if (!isGameOver && !audioManager.isEngineRunning) {
-        audioManager.startEngineSound();
-    }
-}, { once: true });
 
 /**
  * Standard 60 FPS Game Loop
@@ -2167,11 +1771,6 @@ function gameLoop() {
             flashTimer = 0;
             playerCrashBackward = 0;
             playerCrashAngle = (Math.random() > 0.5 ? 1 : -1) * (Math.random() * 20 + 20) * (Math.PI / 180);
-
-            audioManager.playCrashSound();
-            audioManager.stopEngineSound();
-            audioManager.stopNitroSound();
-            audioManager.pauseMusic();
 
             if (score > bestScore) {
                 bestScore = score;
