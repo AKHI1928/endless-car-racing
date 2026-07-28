@@ -1,5 +1,5 @@
 /**
- * Lucky Nitro - Cyberpunk City Background, Upgraded Speed Road, Professional Endless Racing AI,
+ * Lucky Nitro - Cyberpunk City Background, Upgraded Speed Road, Sports Cars, Traffic AI, Nitro Boost,
  * Coin Collection & Garage System
  * script.js
  */
@@ -630,6 +630,7 @@ class PlayerCar {
         const w = this.width;
         const h = this.height;
 
+        // Determine car color theme based on selected car in garage
         const selectedCar = localStorage.getItem('luckyNitroSelectedCar') || 'Pink Car';
         let primaryColor = '#ff007f';
         let darkColor = '#99004d';
@@ -730,67 +731,20 @@ class PlayerCar {
 }
 
 /**
- * Enhanced Vehicle Class supporting Sports Car, Sedan, SUV, Truck, and Bus with smooth lane shifting
+ * Individual Enemy Car Class with 8 Random Colors & Perspective Scaling
  */
 class EnemyCar {
-    constructor(type, lane, progress, speed, color) {
-        this.type = type; // 'Sports car', 'Sedan', 'SUV', 'Truck', 'Bus'
-        this.lane = lane; // 0, 1, 2
-        this.targetLane = lane;
-        this.laneProgress = 0; // 0 (current lane) to 1 or -1 (target lane offset)
-        this.isChangingLane = false;
-        this.progress = progress; // vertical road progress (0 to 1+)
+    constructor(lane, progress, speed, color) {
+        this.lane = lane;
+        this.progress = progress;
         this.speed = speed;
         this.color = color;
-        this.laneChangeTimer = Math.floor(Math.random() * 150) + 100;
     }
 
     update(difficultyMultiplier = 1) {
         if (!isGameOver) {
             this.progress += this.speed * difficultyMultiplier;
-
-            // Handle lane shifting smoothly
-            if (this.isChangingLane) {
-                const shiftSpeed = 0.05;
-                if (this.targetLane > this.lane) {
-                    this.laneProgress += shiftSpeed;
-                    if (this.laneProgress >= 1) {
-                        this.lane = this.targetLane;
-                        this.laneProgress = 0;
-                        this.isChangingLane = false;
-                    }
-                } else if (this.targetLane < this.lane) {
-                    this.laneProgress -= shiftSpeed;
-                    if (this.laneProgress <= -1) {
-                        this.lane = this.targetLane;
-                        this.laneProgress = 0;
-                        this.isChangingLane = false;
-                    }
-                }
-            } else {
-                // Countdown for occasional lane change
-                this.laneChangeTimer--;
-                if (this.laneChangeTimer <= 0) {
-                    this.laneChangeTimer = Math.floor(Math.random() * 200) + 150;
-                    // Trigger lane change decision externally via EnemyManager or self if safe
-                }
-            }
         }
-    }
-
-    getDimensions() {
-        switch (this.type) {
-            case 'Sports car': return { w: 65, h: 100 };
-            case 'Sedan': return { w: 70, h: 115 };
-            case 'SUV': return { w: 80, h: 130 };
-            case 'Truck': return { w: 85, h: 160 };
-            case 'Bus': return { w: 90, h: 190 };
-            default: return { w: 70, h: 110 };
-        }
-    }
-
-    getEffectiveLane() {
-        return this.lane + (this.isChangingLane ? (this.targetLane > this.lane ? Math.abs(this.laneProgress) : -Math.abs(this.laneProgress)) : 0);
     }
 
     getBounds(width, height) {
@@ -805,25 +759,15 @@ class EnemyCar {
         const currentRoadWidth = topRoadWidth + (bottomRoadWidth - topRoadWidth) * this.progress;
         const roadLeft = centerX - currentRoadWidth / 2;
 
-        const effectiveLane = this.getEffectiveLane();
         const laneMultipliers = [0.25, 0.50, 0.75];
-        // interpolate between lanes smoothly
-        let lanePosMultiplier = 0.50;
-        if (effectiveLane <= 0) lanePosMultiplier = laneMultipliers[0];
-        else if (effectiveLane >= 2) lanePosMultiplier = laneMultipliers[2];
-        else if (effectiveLane < 1) {
-            lanePosMultiplier = laneMultipliers[0] + (laneMultipliers[1] - laneMultipliers[0]) * effectiveLane;
-        } else {
-            lanePosMultiplier = laneMultipliers[1] + (laneMultipliers[2] - laneMultipliers[1]) * (effectiveLane - 1);
-        }
+        const x = roadLeft + currentRoadWidth * laneMultipliers[this.lane];
 
-        const x = roadLeft + currentRoadWidth * lanePosMultiplier;
-
-        const dims = this.getDimensions();
+        const baseWidth = 65;
+        const baseHeight = 100;
         const scale = 0.30 + 0.70 * Math.max(0, this.progress);
 
-        const carWidth = dims.w * scale;
-        const carHeight = dims.h * scale;
+        const carWidth = baseWidth * scale;
+        const carHeight = baseHeight * scale;
 
         return {
             x: x - carWidth / 2,
@@ -834,7 +778,9 @@ class EnemyCar {
     }
 
     draw(ctx, width, height) {
-        if (this.progress < 0) return;
+        if (this.progress < 0) {
+            return;
+        }
 
         const bounds = this.getBounds(width, height);
         const scale = 0.30 + 0.70 * this.progress;
@@ -873,6 +819,35 @@ class EnemyCar {
         ctx.closePath();
         ctx.fill();
 
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = Math.max(1, 1.5 * scale);
+        ctx.beginPath();
+        ctx.moveTo(-bw / 6, -bh / 2 + 24 * scale);
+        ctx.lineTo(bw / 6, -bh / 2 + 24 * scale);
+        ctx.stroke();
+
+        ctx.fillStyle = '#111116';
+        ctx.strokeStyle = '#00f0ff';
+        ctx.lineWidth = Math.max(1, 1.5 * scale);
+
+        const wheelW = Math.max(3, 6 * scale);
+        const wheelH = Math.max(12, 22 * scale);
+
+        ctx.fillRect(-bw / 2 - wheelW / 2, -bh / 3, wheelW, wheelH);
+        ctx.strokeRect(-bw / 2 - wheelW / 2, -bh / 3, wheelW, wheelH);
+        ctx.fillRect(bw / 2 - wheelW / 2, -bh / 3, wheelW, wheelH);
+        ctx.strokeRect(bw / 2 - wheelW / 2, -bh / 3, wheelW, wheelH);
+        ctx.fillRect(-bw / 2 - wheelW / 2, bh / 6, wheelW, wheelH + 4 * scale);
+        ctx.strokeRect(-bw / 2 - wheelW / 2, bh / 6, wheelW, wheelH + 4 * scale);
+        ctx.fillRect(bw / 2 - wheelW / 2, bh / 6, wheelW, wheelH + 4 * scale);
+        ctx.strokeRect(bw / 2 - wheelW / 2, bh / 6, wheelW, wheelH + 4 * scale);
+
+        ctx.shadowColor = '#00ffff';
+        ctx.shadowBlur = 10 * scale;
+        ctx.fillStyle = '#00ffff';
+        ctx.fillRect(-bw / 2 + 4 * scale, -bh / 2 + 10 * scale, Math.max(3, 10 * scale), Math.max(2, 4 * scale));
+        ctx.fillRect(bw / 2 - 14 * scale, -bh / 2 + 10 * scale, Math.max(3, 10 * scale), Math.max(2, 4 * scale));
+
         ctx.shadowColor = '#ff0000';
         ctx.shadowBlur = 12 * scale;
         ctx.fillStyle = '#ff0000';
@@ -884,7 +859,7 @@ class EnemyCar {
 }
 
 /**
- * Professional Endless Racing AI & EnemyManager Architecture
+ * Professional Traffic AI & EnemyManager Architecture
  */
 class EnemyManager {
     constructor() {
@@ -901,22 +876,16 @@ class EnemyManager {
 
     getRandomColor() {
         const colors = [
-            '#ffcc00', '#00ff66', '#00f0ff', '#9900ff',
-            '#ff6600', '#ffffff', '#ff0033', '#00ffff'
+            '#ffcc00',
+            '#00ff66',
+            '#00f0ff',
+            '#9900ff',
+            '#ff6600',
+            '#ffffff',
+            '#ff0033',
+            '#00ffff'
         ];
         return colors[Math.floor(Math.random() * colors.length)];
-    }
-
-    getRandomType() {
-        const types = ['Sports car', 'Sedan', 'SUV', 'Truck', 'Bus'];
-        const weights = [0.3, 0.3, 0.2, 0.1, 0.1]; // Probability weights
-        let randomVal = Math.random();
-        let cumulative = 0;
-        for (let i = 0; i < types.length; i++) {
-            cumulative += weights[i];
-            if (randomVal <= cumulative) return types[i];
-        }
-        return 'Sedan';
     }
 
     init() {
@@ -925,13 +894,17 @@ class EnemyManager {
         const initialProgress = [-0.1, -0.5, -0.9, -1.3, -1.7];
 
         for (let i = 0; i < 5; i++) {
-            const type = this.getRandomType();
             const lane = initialLanes[i];
             const progress = initialProgress[i];
-            const speed = 0.006 + Math.random() * 0.005;
+            const speed = this.getRandomSpeed();
             const color = this.getRandomColor();
-            this.enemies.push(new EnemyCar(type, lane, progress, speed, color));
+            this.enemies.push(new EnemyCar(lane, progress, speed, color));
         }
+    }
+
+    getRandomSpeed() {
+        const speedTiers = [0.005, 0.008, 0.011];
+        return speedTiers[Math.floor(Math.random() * speedTiers.length)];
     }
 
     update(difficultyMultiplier = 1) {
@@ -949,16 +922,15 @@ class EnemyManager {
             const currentDisplayScore = Math.floor(score / 10);
             const difficultyLevel = Math.floor(currentDisplayScore / 20);
             
-            // Difficulty increases: faster spawning & more traffic
-            const spawnInterval = Math.max(30, 80 - (difficultyLevel * 6));
-            const maxConcurrentCars = Math.min(10, 5 + Math.floor(difficultyLevel / 1.5));
+            const spawnInterval = Math.max(45, 90 - (difficultyLevel * 8));
+            const maxConcurrentCars = Math.min(8, 5 + Math.floor(difficultyLevel / 2));
 
             if (this.spawnTimer >= spawnInterval && this.enemies.length < maxConcurrentCars) {
                 this.spawnTimer = 0;
                 this.trySpawnCar();
             }
 
-            this.manageTrafficAI();
+            this.preventLaneOverlaps();
         }
     }
 
@@ -971,7 +943,7 @@ class EnemyManager {
         for (let lane of availableLanes) {
             let laneOccupied = false;
             for (let enemy of this.enemies) {
-                if (enemy.lane === lane && enemy.progress < 0.2 && enemy.progress > -0.6) {
+                if (enemy.lane === lane && enemy.progress < 0.2 && enemy.progress > -0.5) {
                     laneOccupied = true;
                     break;
                 }
@@ -984,64 +956,20 @@ class EnemyManager {
         }
 
         if (chosenLane !== -1) {
-            // Prevent impossible situations where all lanes become blocked
-            // Check if spawning this car would block all 3 lanes completely at the start
-            let simulatedLanesBlocked = [false, false, false];
-            simulatedLanesBlocked[chosenLane] = true;
-            for (let enemy of this.enemies) {
-                if (enemy.progress < 0.1 && enemy.progress > -0.4) {
-                    simulatedLanesBlocked[enemy.lane] = true;
-                }
-            }
-            if (simulatedLanesBlocked[0] && simulatedLanesBlocked[1] && simulatedLanesBlocked[2]) {
-                return; // Skip spawn to prevent unbeatable wall
-            }
-
-            const type = this.getRandomType();
-            const currentDisplayScore = Math.floor(score / 10);
-            const speedBoost = Math.min(0.006, currentDisplayScore * 0.0001);
-            const speed = 0.005 + Math.random() * 0.006 + speedBoost;
+            const speed = this.getRandomSpeed();
             const color = this.getRandomColor();
-            this.enemies.push(new EnemyCar(type, chosenLane, -0.2, speed, color));
+            this.enemies.push(new EnemyCar(chosenLane, 0, speed, color));
         }
     }
 
-    manageTrafficAI() {
-        for (let enemy of this.enemies) {
-            // Handle occasional safe lane changes
-            if (!enemy.isChangingLane && enemy.laneChangeTimer <= 0) {
-                const possibleTargetLanes = [];
-                if (enemy.lane > 0) possibleTargetLanes.push(enemy.lane - 1);
-                if (enemy.lane < 2) possibleTargetLanes.push(enemy.lane + 1);
-
-                if (possibleTargetLanes.length > 0) {
-                    const target = possibleTargetLanes[Math.floor(Math.random() * possibleTargetLanes.length)];
-                    // Verify if target lane is safe (no cars nearby)
-                    let targetLaneSafe = true;
-                    for (let other of this.enemies) {
-                        if (other !== enemy && other.lane === target && Math.abs(other.progress - enemy.progress) < 0.35) {
-                            targetLaneSafe = false;
-                            break;
-                        }
-                    }
-                    if (targetLaneSafe) {
-                        enemy.targetLane = target;
-                        enemy.isChangingLane = true;
-                        enemy.laneProgress = 0;
-                    }
-                }
-                enemy.laneChangeTimer = Math.floor(Math.random() * 200) + 150;
-            }
-        }
-
-        // Vehicles must never overlap
+    preventLaneOverlaps() {
         for (let i = 0; i < this.enemies.length; i++) {
             for (let j = i + 1; j < this.enemies.length; j++) {
                 let e1 = this.enemies[i];
                 let e2 = this.enemies[j];
 
-                if (e1.lane === e2.lane && !e1.isChangingLane && !e2.isChangingLane) {
-                    const minDistance = 0.30;
+                if (e1.lane === e2.lane) {
+                    const minDistance = 0.35;
                     if (Math.abs(e1.progress - e2.progress) < minDistance) {
                         if (e1.progress < e2.progress) {
                             e2.progress = e1.progress + minDistance;
@@ -1083,8 +1011,8 @@ class EnemyManager {
  */
 class Coin {
     constructor(lane, progress, speed) {
-        this.lane = lane;
-        this.progress = progress;
+        this.lane = lane; // 0: Left, 1: Center, 2: Right
+        this.progress = progress; // Negative = above horizon
         this.speed = speed;
         this.spinAngle = Math.random() * Math.PI * 2;
         this.spinSpeed = 0.1;
@@ -1134,23 +1062,29 @@ class Coin {
         ctx.save();
         ctx.translate(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
 
+        // Apply 3D spinning effect via horizontal scaling (cosine of spinAngle)
         const spinScaleX = Math.cos(this.spinAngle);
+
         ctx.scale(spinScaleX, 1);
 
+        // Glowing gold styling
         ctx.shadowColor = '#ffcc00';
         ctx.shadowBlur = 15 * scale;
 
         const coinRadius = bounds.width / 2;
 
+        // Outer gold circle
         ctx.fillStyle = '#ffcc00';
         ctx.beginPath();
         ctx.arc(0, 0, coinRadius, 0, Math.PI * 2);
         ctx.fill();
 
+        // Inner darker gold ring
         ctx.strokeStyle = '#997700';
         ctx.lineWidth = Math.max(1, 3 * scale);
         ctx.stroke();
 
+        // Dollar sign or star emblem inside coin
         ctx.fillStyle = '#997700';
         ctx.font = `bold ${Math.floor(18 * scale)}px sans-serif`;
         ctx.textAlign = 'center';
@@ -1184,7 +1118,7 @@ class CoinManager {
 
         if (!isGameOver) {
             this.spawnTimer++;
-            if (this.spawnTimer >= 70) {
+            if (this.spawnTimer >= 70) { // Spawn coin periodically
                 this.spawnTimer = 0;
                 this.trySpawnCoin();
             }
@@ -1219,6 +1153,7 @@ class CoinManager {
                 coinsCount++;
                 localStorage.setItem('luckyNitroCoins', coinsCount);
 
+                // Add floating "+1" text animation
                 floatingTexts.push({
                     x: coinBounds.x + coinBounds.width / 2,
                     y: coinBounds.y,
@@ -1227,6 +1162,7 @@ class CoinManager {
                     vy: -1.5
                 });
 
+                // Placeholder audio sound effect (Audio synthesis or silent fallback)
                 try {
                     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                     const osc = audioCtx.createOscillator();
@@ -1240,7 +1176,9 @@ class CoinManager {
                     gain.connect(audioCtx.destination);
                     osc.start();
                     osc.stop(audioCtx.currentTime + 0.1);
-                } catch (e) {}
+                } catch (e) {
+                    // AudioContext not allowed or supported without user gesture
+                }
             }
         }
     }
@@ -1354,6 +1292,7 @@ gameOverContainer.innerHTML = `
                 border-radius: 10px;
                 cursor: pointer;
                 box-shadow: 0 0 15px rgba(0, 240, 255, 0.6);
+                transition: transform 0.1s ease;
             ">▶ PLAY AGAIN</button>
 
             <button id="garageBtn" style="
@@ -1366,6 +1305,7 @@ gameOverContainer.innerHTML = `
                 border-radius: 10px;
                 cursor: pointer;
                 box-shadow: 0 0 15px rgba(255, 204, 0, 0.6);
+                transition: transform 0.1s ease;
             ">🚗 GARAGE</button>
 
             <button id="mainMenuBtn" style="
@@ -1378,6 +1318,7 @@ gameOverContainer.innerHTML = `
                 border-radius: 10px;
                 cursor: pointer;
                 box-shadow: 0 0 15px rgba(255, 0, 127, 0.6);
+                transition: transform 0.1s ease;
             ">🏠 MAIN MENU</button>
         </div>
     </div>
@@ -1480,6 +1421,7 @@ function renderGarageHTML() {
         </div>
     `;
 
+    // Attach button event listeners inside garage
     garageContainer.querySelectorAll('.selectCarBtn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const carName = e.target.getAttribute('data-car');
@@ -1515,6 +1457,7 @@ function renderGarageHTML() {
 }
 document.body.appendChild(garageContainer);
 
+// Add Garage Button to Main HUD or Game Over
 const playAgainBtn = document.getElementById('playAgainBtn');
 const garageBtn = document.getElementById('garageBtn');
 const mainMenuBtn = document.getElementById('mainMenuBtn');
@@ -1557,6 +1500,7 @@ mainMenuBtn.addEventListener('touchstart', (e) => {
     alert('Main Menu placeholder clicked!');
 });
 
+// Also add a permanent Garage button on top-left / middle for quick access during gameplay
 const hudGarageBtn = document.createElement('div');
 hudGarageBtn.id = 'hudGarageBtn';
 hudGarageBtn.innerHTML = '🚗 GARAGE';
@@ -1580,6 +1524,7 @@ hudGarageBtn.addEventListener('click', () => {
     garageContainer.style.display = 'flex';
 });
 document.body.appendChild(hudGarageBtn);
+
 
 /**
  * Standard 60 FPS Game Loop
@@ -1656,6 +1601,7 @@ function gameLoop() {
     enemyManager.update(enemyDifficultyMultiplier);
     enemyManager.draw(ctx, canvas.width, canvas.height);
 
+    // Update and draw coins
     coinManager.update(enemyDifficultyMultiplier);
     coinManager.draw(ctx, canvas.width, canvas.height);
 
@@ -1699,6 +1645,7 @@ function gameLoop() {
         score += 1;
     }
 
+    // Display Score, Best Score, and Coins at top-left/top-right
     ctx.save();
     ctx.font = 'bold 20px sans-serif';
     ctx.textAlign = 'right';
@@ -1741,6 +1688,7 @@ function gameLoop() {
     ctx.fillRect(32, 52, fillWidth, 12);
     ctx.restore();
 
+    // Render floating text animations for coin collections (+1)
     ctx.save();
     for (let i = floatingTexts.length - 1; i >= 0; i--) {
         let ft = floatingTexts[i];
@@ -1763,8 +1711,10 @@ function gameLoop() {
     if (!isGameOver) {
         const playerBounds = playerCar.getBounds();
         
+        // Check coin collections
         coinManager.checkCollection(playerBounds, canvas.width, canvas.height);
 
+        // Check enemy traffic collisions
         if (enemyManager.checkCollisions(playerBounds, canvas.width, canvas.height)) {
             isGameOver = true;
             crashTimer = 0;
