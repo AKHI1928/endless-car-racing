@@ -1,5 +1,5 @@
 /**
- * Lucky Nitro - Cyberpunk Road with Professional Traffic AI & EnemyManager
+ * Lucky Nitro - Cyberpunk Road with Professional Sports Cars & EnemyManager
  * script.js
  */
 
@@ -123,7 +123,7 @@ class CyberpunkRoad {
 }
 
 /**
- * Player Car Controller & Renderer with PNG Sprite Support & Fallback
+ * Player Car Controller & Renderer with Professional Cyberpunk Sports Car Design
  */
 class PlayerCar {
     constructor() {
@@ -227,62 +227,87 @@ class PlayerCar {
         if (playerImageLoaded) {
             ctx.drawImage(playerImage, -this.width / 2, -this.height / 2, this.width, this.height);
         } else {
-            // Fallback Canvas drawing
-            ctx.fillStyle = '#ff0055';
-            ctx.shadowColor = '#ff0055';
-            ctx.shadowBlur = 10;
+            // Professional Cyberpunk Sports Car Design (Pink / Magenta Theme)
+            const w = this.width;
+            const h = this.height;
 
+            // Drop shadow & glow
+            ctx.shadowColor = '#ff007f';
+            ctx.shadowBlur = 18;
+
+            // Detailed Body Shape (Sleek aerodynamic curves)
+            ctx.fillStyle = '#ff007f'; // Primary Pink / Magenta
             ctx.beginPath();
-            ctx.moveTo(-this.width / 2 + 10, 20);
-            ctx.lineTo(-this.width / 2, -20);
-            ctx.lineTo(-this.width / 4, -this.height / 2);
-            ctx.lineTo(this.width / 4, -this.height / 2);
-            ctx.lineTo(this.width / 2, -20);
-            ctx.lineTo(this.width / 2 - 10, 20);
+            ctx.moveTo(-w / 2 + 12, h / 2 - 10);
+            ctx.lineTo(-w / 2 + 4, -10);
+            ctx.lineTo(-w / 2 + 10, -h / 2 + 25);
+            ctx.lineTo(-w / 4, -h / 2);
+            ctx.lineTo(w / 4, -h / 2);
+            ctx.lineTo(w / 2 - 10, -h / 2 + 25);
+            ctx.lineTo(w / 2 - 4, -10);
+            ctx.lineTo(w / 2 - 12, h / 2 - 10);
             ctx.closePath();
             ctx.fill();
 
-            // Hood & Front Nose
-            ctx.fillStyle = '#b3003b';
+            // Hood / Body Highlights & Aerodynamic Panels
+            ctx.fillStyle = '#cc0066';
             ctx.beginPath();
-            ctx.moveTo(-this.width / 4, -this.height / 2);
-            ctx.lineTo(this.width / 4, -this.height / 2);
-            ctx.lineTo(this.width / 3, -10);
-            ctx.lineTo(-this.width / 3, -10);
+            ctx.moveTo(-w / 4, -h / 2 + 15);
+            ctx.lineTo(w / 4, -h / 2 + 15);
+            ctx.lineTo(w / 3, 0);
+            ctx.lineTo(-w / 3, 0);
             ctx.closePath();
             ctx.fill();
 
-            // Windshield
+            // Dark Windshield Cockpit
             ctx.fillStyle = '#0b0b16';
             ctx.beginPath();
-            ctx.moveTo(-this.width / 4 + 4, -this.height / 2 + 12);
-            ctx.lineTo(this.width / 4 - 4, -this.height / 2 + 12);
-            ctx.lineTo(this.width / 3 - 4, -5);
-            ctx.lineTo(-this.width / 3 + 4, -5);
+            ctx.moveTo(-w / 4 + 4, -h / 2 + 22);
+            ctx.lineTo(w / 4 - 4, -h / 2 + 22);
+            ctx.lineTo(w / 3 - 6, -5);
+            ctx.lineTo(-w / 3 + 6, -5);
             ctx.closePath();
             ctx.fill();
 
-            // Headlights
+            // Windshield Reflection / Tint line
+            ctx.strokeStyle = '#ff66b2';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(-w / 4 + 8, -h / 2 + 26);
+            ctx.lineTo(w / 4 - 8, -h / 2 + 26);
+            ctx.stroke();
+
+            // Wheels with detailed rims
+            ctx.fillStyle = '#111116';
+            ctx.strokeStyle = '#00f0ff';
+            ctx.lineWidth = 2;
+            
+            // Front Left Wheel
+            ctx.fillRect(-w / 2 - 5, -h / 3, 7, 24);
+            ctx.strokeRect(-w / 2 - 5, -h / 3, 7, 24);
+            // Front Right Wheel
+            ctx.fillRect(w / 2 - 2, -h / 3, 7, 24);
+            ctx.strokeRect(w / 2 - 2, -h / 3, 7, 24);
+            // Rear Left Wheel
+            ctx.fillRect(-w / 2 - 5, h / 4, 7, 28);
+            ctx.strokeRect(-w / 2 - 5, h / 4, 7, 28);
+            // Rear Right Wheel
+            ctx.fillRect(w / 2 - 2, h / 4, 7, 28);
+            ctx.strokeRect(w / 2 - 2, h / 4, 7, 28);
+
+            // Neon Headlights (Cyan Glow)
             ctx.shadowColor = '#00f0ff';
             ctx.shadowBlur = 15;
             ctx.fillStyle = '#00f0ff';
-            ctx.fillRect(-this.width / 2 + 6, -this.height / 2 + 2, 12, 4);
-            ctx.fillRect(this.width / 2 - 18, -this.height / 2 + 2, 12, 4);
+            ctx.fillRect(-w / 2 + 6, -h / 2 + 4, 12, 5);
+            ctx.fillRect(w / 2 - 18, -h / 2 + 4, 12, 5);
 
-            // Taillights
-            ctx.shadowColor = '#ff3300';
-            ctx.shadowBlur = 12;
-            ctx.fillStyle = '#ff3300';
-            ctx.fillRect(-this.width / 2 + 4, this.height / 2 - 15, 14, 4);
-            ctx.fillRect(this.width / 2 - 18, this.height / 2 - 15, 14, 4);
-
-            // Wheels
-            ctx.fillStyle = '#111111';
-            ctx.shadowBlur = 0;
-            ctx.fillRect(-this.width / 2 - 4, -this.height / 3, 6, 22);
-            ctx.fillRect(this.width / 2 - 2, -this.height / 3, 6, 22);
-            ctx.fillRect(-this.width / 2 - 4, this.height / 4, 6, 26);
-            ctx.fillRect(this.width / 2 - 2, this.height / 4, 6, 26);
+            // Neon Taillights (Intense Red Glow)
+            ctx.shadowColor = '#ff0033';
+            ctx.shadowBlur = 15;
+            ctx.fillStyle = '#ff0033';
+            ctx.fillRect(-w / 2 + 5, h / 2 - 14, 14, 5);
+            ctx.fillRect(w / 2 - 19, h / 2 - 14, 14, 5);
         }
 
         ctx.restore();
@@ -290,13 +315,14 @@ class PlayerCar {
 }
 
 /**
- * Individual Enemy Car Class with Strict Horizon Clipping
+ * Individual Enemy Car Class with Strict Horizon Clipping & Detailed Cyberpunk Sports Car Design
  */
 class EnemyCar {
-    constructor(lane, progress, speed) {
+    constructor(lane, progress, speed, color = '#ffcc00') {
         this.lane = lane;           // 0: Left, 1: Center, 2: Right
         this.progress = progress;   // Progress along road (negative = above horizon)
         this.speed = speed;         // Randomized speed tier (slow, medium, fast)
+        this.color = color;         // Random color theme (yellow, blue, green, red, white)
     }
 
     update(difficultyMultiplier = 1) {
@@ -340,6 +366,7 @@ class EnemyCar {
         }
 
         const bounds = this.getBounds(width, height);
+        const scale = 0.30 + 0.70 * this.progress;
 
         ctx.save();
         ctx.translate(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
@@ -347,38 +374,70 @@ class EnemyCar {
         if (enemyImageLoaded) {
             ctx.drawImage(enemyImage, -bounds.width / 2, -bounds.height / 2, bounds.width, bounds.height);
         } else {
-            // Fallback Canvas drawing
-            const scale = 0.30 + 0.70 * this.progress;
-            ctx.fillStyle = '#ffaa00';
-            ctx.shadowColor = '#ffaa00';
-            ctx.shadowBlur = 12 * scale;
+            // Professional Cyberpunk Sports Car Design for Enemies
+            const bw = bounds.width;
+            const bh = bounds.height;
 
+            // Glow and shadows scaled with perspective
+            ctx.shadowColor = this.color;
+            ctx.shadowBlur = 14 * scale;
+
+            // Detailed Body Shape
+            ctx.fillStyle = this.color;
             ctx.beginPath();
-            ctx.moveTo(-bounds.width / 2 + 8 * scale, bounds.height / 2);
-            ctx.lineTo(-bounds.width / 2, -bounds.height / 4);
-            ctx.lineTo(-bounds.width / 4, -bounds.height / 2);
-            ctx.lineTo(bounds.width / 4, -bounds.height / 2);
-            ctx.lineTo(bounds.width / 2, -bounds.height / 4);
-            ctx.lineTo(bounds.width / 2 - 8 * scale, bounds.height / 2);
+            ctx.moveTo(-bw / 2 + 10 * scale, bh / 2 - 8 * scale);
+            ctx.lineTo(-bw / 2 + 4 * scale, -5 * scale);
+            ctx.lineTo(-bw / 4, -bh / 2 + 15 * scale);
+            ctx.lineTo(bw / 4, -bh / 2 + 15 * scale);
+            ctx.lineTo(bw / 2 - 4 * scale, -5 * scale);
+            ctx.lineTo(bw / 2 - 10 * scale, bh / 2 - 8 * scale);
             ctx.closePath();
             ctx.fill();
 
-            // Windshield
+            // Dark Windshield Cockpit
             ctx.fillStyle = '#0b0b16';
             ctx.beginPath();
-            ctx.moveTo(-bounds.width / 4 + 2, -bounds.height / 2 + 8 * scale);
-            ctx.lineTo(bounds.width / 4 - 2, -bounds.height / 2 + 8 * scale);
-            ctx.lineTo(bounds.width / 3 - 2, -2);
-            ctx.lineTo(-bounds.width / 3 + 2, -2);
+            ctx.moveTo(-bw / 4 + 2, -bh / 2 + 20 * scale);
+            ctx.lineTo(bw / 4 - 2, -bh / 2 + 20 * scale);
+            ctx.lineTo(bw / 3 - 4, -2);
+            ctx.lineTo(-bw / 3 + 4, -2);
             ctx.closePath();
             ctx.fill();
 
-            // Taillights
+            // Detailed Wheels
+            ctx.fillStyle = '#111116';
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = Math.max(1, 1.5 * scale);
+
+            const wheelW = Math.max(3, 6 * scale);
+            const wheelH = Math.max(12, 22 * scale);
+
+            // Front Left Wheel
+            ctx.fillRect(-bw / 2 - wheelW / 2, -bh / 3, wheelW, wheelH);
+            ctx.strokeRect(-bw / 2 - wheelW / 2, -bh / 3, wheelW, wheelH);
+            // Front Right Wheel
+            ctx.fillRect(bw / 2 - wheelW / 2, -bh / 3, wheelW, wheelH);
+            ctx.strokeRect(bw / 2 - wheelW / 2, -bh / 3, wheelW, wheelH);
+            // Rear Left Wheel
+            ctx.fillRect(-bw / 2 - wheelW / 2, bh / 6, wheelW, wheelH + 4 * scale);
+            ctx.strokeRect(-bw / 2 - wheelW / 2, bh / 6, wheelW, wheelH + 4 * scale);
+            // Rear Right Wheel
+            ctx.fillRect(bw / 2 - wheelW / 2, bh / 6, wheelW, wheelH + 4 * scale);
+            ctx.strokeRect(bw / 2 - wheelW / 2, bh / 6, wheelW, wheelH + 4 * scale);
+
+            // Neon Headlights
+            ctx.shadowColor = '#00ffff';
+            ctx.shadowBlur = 10 * scale;
+            ctx.fillStyle = '#00ffff';
+            ctx.fillRect(-bw / 2 + 4 * scale, -bh / 2 + 10 * scale, Math.max(3, 10 * scale), Math.max(2, 4 * scale));
+            ctx.fillRect(bw / 2 - 14 * scale, -bh / 2 + 10 * scale, Math.max(3, 10 * scale), Math.max(2, 4 * scale));
+
+            // Neon Taillights
             ctx.shadowColor = '#ff0000';
-            ctx.shadowBlur = 15 * scale;
+            ctx.shadowBlur = 12 * scale;
             ctx.fillStyle = '#ff0000';
-            ctx.fillRect(-bounds.width / 2 + 4 * scale, bounds.height / 2 - 8 * scale, Math.max(4, 10 * scale), Math.max(2, 4 * scale));
-            ctx.fillRect(bounds.width / 2 - 14 * scale, bounds.height / 2 - 8 * scale, Math.max(4, 10 * scale), Math.max(2, 4 * scale));
+            ctx.fillRect(-bw / 2 + 4 * scale, bh / 2 - 10 * scale, Math.max(3, 10 * scale), Math.max(2, 4 * scale));
+            ctx.fillRect(bw / 2 - 14 * scale, bh / 2 - 10 * scale, Math.max(3, 10 * scale), Math.max(2, 4 * scale));
         }
 
         ctx.restore();
@@ -395,6 +454,12 @@ class EnemyManager {
         this.init();
     }
 
+    getRandomColor() {
+        // Requirement 9: Enemy cars should have random colors (yellow, blue, green, red, white)
+        const colors = ['#ffcc00', '#00f0ff', '#00ff66', '#ff0033', '#ffffff'];
+        return colors[Math.floor(Math.random() * colors.length)];
+    }
+
     init() {
         this.enemies = [];
         // Spawn initial fleet of traffic cars with safe vertical spacing
@@ -405,7 +470,8 @@ class EnemyManager {
             const lane = initialLanes[i];
             const progress = initialProgress[i];
             const speed = this.getRandomSpeed();
-            this.enemies.push(new EnemyCar(lane, progress, speed));
+            const color = this.getRandomColor();
+            this.enemies.push(new EnemyCar(lane, progress, speed, color));
         }
     }
 
@@ -453,7 +519,7 @@ class EnemyManager {
         let chosenLane = -1;
 
         for (let lane of availableLanes) {
-            // Check if lane is occupied near the horizon spawn point (progress between -0.4 and 0.1)
+            // Check if lane is occupied near the horizon spawn point (progress between -0.5 and 0.2)
             let laneOccupied = false;
             for (let enemy of this.enemies) {
                 if (enemy.lane === lane && enemy.progress < 0.2 && enemy.progress > -0.5) {
@@ -471,7 +537,8 @@ class EnemyManager {
         // If a valid open lane is found, spawn car cleanly at the horizon (progress = 0)
         if (chosenLane !== -1) {
             const speed = this.getRandomSpeed();
-            this.enemies.push(new EnemyCar(chosenLane, 0, speed));
+            const color = this.getRandomColor();
+            this.enemies.push(new EnemyCar(chosenLane, 0, speed, color));
         }
         // If all lanes are occupied near spawn, delay spawning naturally until space opens up
     }
