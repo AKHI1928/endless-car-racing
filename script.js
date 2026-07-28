@@ -1,5 +1,5 @@
 /**
- * Lucky Nitro - Cyberpunk City Background, Road, Sports Cars & Traffic AI
+ * Lucky Nitro - Cyberpunk City Background, Upgraded Speed Road, Sports Cars & Traffic AI
  * script.js
  */
 
@@ -239,12 +239,37 @@ class CityBackground {
 }
 
 /**
- * Cyberpunk Road Renderer with Perspective Projection
+ * Upgraded Cyberpunk Speed Road Renderer with Professional Effects
  */
 class CyberpunkRoad {
     constructor() {
         this.offsetY = 0;
         this.baseSpeed = 8; // Scrolling speed
+        this.speedStreaks = [];
+        this.particles = [];
+        this.initSpeedElements();
+    }
+
+    initSpeedElements() {
+        // Initialize dynamic moving speed streaks
+        for (let i = 0; i < 25; i++) {
+            this.speedStreaks.push({
+                x: Math.random() * window.innerWidth,
+                y: Math.random() * window.innerHeight,
+                length: Math.random() * 40 + 20,
+                speed: Math.random() * 12 + 8,
+                alpha: Math.random() * 0.5 + 0.1
+            });
+        }
+
+        // Initialize moving light particles along the road borders
+        for (let i = 0; i < 15; i++) {
+            this.particles.push({
+                progress: Math.random(),
+                side: Math.random() > 0.5 ? 'left' : 'right',
+                speed: Math.random() * 0.02 + 0.01
+            });
+        }
     }
 
     update(speedMultiplier = 1) {
@@ -252,14 +277,31 @@ class CyberpunkRoad {
         if (this.offsetY >= 60) {
             this.offsetY = 0;
         }
+
+        // Update speed streaks
+        for (let streak of this.speedStreaks) {
+            streak.y += streak.speed * speedMultiplier;
+            if (streak.y > window.innerHeight) {
+                streak.y = -50;
+                streak.x = Math.random() * window.innerWidth;
+            }
+        }
+
+        // Update moving light particles
+        for (let p of this.particles) {
+            p.progress += p.speed * speedMultiplier;
+            if (p.progress > 1) {
+                p.progress = 0;
+                p.side = Math.random() > 0.5 ? 'left' : 'right';
+            }
+        }
     }
 
-    draw(ctx, width, height) {
-        // Perspective road parameters
-        const topRoadWidth = width * 0.15;   // Narrower at the horizon/top
-        const bottomRoadWidth = width * 0.55; // Wider at the bottom
-        const horizonY = height * 0.35;       // Vanishing point Y coordinate
-        const bottomY = height;              // Bottom of the screen
+    draw(ctx, width, height, speedMultiplier = 1) {
+        const topRoadWidth = width * 0.15;   
+        const bottomRoadWidth = width * 0.55; 
+        const horizonY = height * 0.35;       
+        const bottomY = height;              
 
         const centerX = width / 2;
 
@@ -268,8 +310,13 @@ class CyberpunkRoad {
         const bottomLeftX = centerX - bottomRoadWidth / 2;
         const bottomRightX = centerX + bottomRoadWidth / 2;
 
-        // Draw dark asphalt road background using a trapezoid path
-        ctx.fillStyle = '#12121c';
+        // 1. Draw Asphalt Road Background with subtle reflections/gradient
+        const roadGradient = ctx.createLinearGradient(centerX, horizonY, centerX, bottomY);
+        roadGradient.addColorStop(0, '#0a0a12');
+        roadGradient.addColorStop(0.5, '#12121c');
+        roadGradient.addColorStop(1, '#181824');
+
+        ctx.fillStyle = roadGradient;
         ctx.beginPath();
         ctx.moveTo(topLeftX, horizonY);
         ctx.lineTo(topRightX, horizonY);
@@ -278,30 +325,60 @@ class CyberpunkRoad {
         ctx.closePath();
         ctx.fill();
 
-        // Draw glowing cyan neon borders following the perspective
+        // Road Surface Reflection overlay
+        ctx.fillStyle = 'rgba(0, 240, 255, 0.03)';
+        ctx.beginPath();
+        ctx.moveTo(centerX, horizonY);
+        ctx.lineTo(bottomRightX, bottomY);
+        ctx.lineTo(bottomLeftX, bottomY);
+        ctx.closePath();
+        ctx.fill();
+
+        // 2. Neon Light Strips on both sides with bloom / glow
+        const glowIntensity = 10 + (speedMultiplier * 5);
         ctx.save();
         ctx.shadowColor = '#00f0ff';
-        ctx.shadowBlur = 15;
+        ctx.shadowBlur = glowIntensity;
         ctx.strokeStyle = '#00f0ff';
-        ctx.lineWidth = 4;
+        ctx.lineWidth = 5;
 
-        // Left perspective border
+        // Left neon border
         ctx.beginPath();
         ctx.moveTo(topLeftX, horizonY);
         ctx.lineTo(bottomLeftX, bottomY);
         ctx.stroke();
 
-        // Right perspective border
+        // Right neon border
         ctx.beginPath();
         ctx.moveTo(topRightX, horizonY);
         ctx.lineTo(bottomRightX, bottomY);
         ctx.stroke();
         ctx.restore();
 
-        // Draw animated dashed center lane following the perspective
+        // Inner secondary neon highlight line for depth
         ctx.save();
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#ff007f';
+        ctx.lineWidth = 1.5;
+        ctx.shadowColor = '#ff007f';
+        ctx.shadowBlur = 8;
+
+        ctx.beginPath();
+        ctx.moveTo(topLeftX + 3, horizonY);
+        ctx.lineTo(bottomLeftX + 8, bottomY);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(topRightX - 3, horizonY);
+        ctx.lineTo(bottomRightX - 8, bottomY);
+        ctx.stroke();
+        ctx.restore();
+
+        // 3. Animated Glowing Lane Markers (Dashed center lines)
+        ctx.save();
+        ctx.strokeStyle = '#00ffff';
+        ctx.lineWidth = 3.5;
+        ctx.shadowColor = '#00ffff';
+        ctx.shadowBlur = 12;
 
         const totalSegments = 20;
         const segmentHeight = (bottomY - horizonY) / totalSegments;
@@ -323,6 +400,35 @@ class CyberpunkRoad {
                 ctx.lineTo(x2, y2);
                 ctx.stroke();
             }
+        }
+        ctx.restore();
+
+        // 4. Moving Light Particles along road sides
+        ctx.save();
+        ctx.fillStyle = '#ffffff';
+        ctx.shadowColor = '#00f0ff';
+        ctx.shadowBlur = 10;
+        for (let p of this.particles) {
+            let py = horizonY + p.progress * (bottomY - horizonY);
+            let currentRoadWidth = topRoadWidth + (bottomRoadWidth - topRoadWidth) * p.progress;
+            let roadLeft = centerX - currentRoadWidth / 2;
+            let px = p.side === 'left' ? roadLeft + 4 : roadLeft + currentRoadWidth - 4;
+
+            ctx.beginPath();
+            ctx.arc(px, py, 2.5 * (0.5 + 0.5 * p.progress), 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
+
+        // 5. Speed Streaks (Fullscreen immersive feel)
+        ctx.save();
+        ctx.strokeStyle = 'rgba(0, 240, 255, 0.35)';
+        ctx.lineWidth = 1.5;
+        for (let streak of this.speedStreaks) {
+            ctx.beginPath();
+            ctx.moveTo(streak.x, streak.y);
+            ctx.lineTo(streak.x, streak.y + streak.length);
+            ctx.stroke();
         }
         ctx.restore();
     }
@@ -796,22 +902,31 @@ function gameLoop() {
     ctx.fillStyle = '#0b0b16';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Calculate dynamic difficulty scaling based on score
+    // Calculate dynamic difficulty & speed scaling based on score
     const currentDisplayScore = Math.floor(score / 10);
     const difficultyLevel = Math.floor(currentDisplayScore / 20);
     const difficultyMultiplier = 1 + (difficultyLevel * 0.15);
+
+    // Subtle camera shake at high speeds/difficulty
+    ctx.save();
+    if (difficultyLevel >= 2 && !isGameOver) {
+        const shakeIntensity = Math.min(4, (difficultyLevel - 1) * 0.8);
+        const shakeX = (Math.random() - 0.5) * shakeIntensity;
+        const shakeY = (Math.random() - 0.5) * shakeIntensity;
+        ctx.translate(shakeX, shakeY);
+    }
 
     // 1. Draw Night Sky and Stars (Static / Fixed)
     sky.update();
     sky.draw(ctx, canvas.width, canvas.height);
 
-    // 2. Draw Animated Cyberpunk City Background (Parallax scrolling slower than road)
+    // 2. Draw Animated Cyberpunk City Background (Parallax scrolling)
     cityBackground.update(difficultyMultiplier);
     cityBackground.draw(ctx, canvas.width, canvas.height);
 
-    // 3. Draw Perspective Road (Drawn BEFORE cars, AFTER city)
+    // 3. Draw Upgraded Cyberpunk Speed Road (Drawn BEFORE cars, AFTER city)
     road.update(difficultyMultiplier);
-    road.draw(ctx, canvas.width, canvas.height);
+    road.draw(ctx, canvas.width, canvas.height, difficultyMultiplier);
 
     // 4. Update and render all enemies via EnemyManager traffic AI
     enemyManager.update(difficultyMultiplier);
@@ -820,6 +935,17 @@ function gameLoop() {
     // 5. Update and render the player car
     playerCar.update(canvas.width, canvas.height);
     playerCar.draw(ctx);
+
+    ctx.restore(); // Restore from camera shake translation
+
+    // Soft Vignette Overlay around screen edges
+    ctx.save();
+    const vignette = ctx.createRadialGradient(canvas.width / 2, canvas.height / 2, canvas.width * 0.35, canvas.width / 2, canvas.height / 2, canvas.width * 0.75);
+    vignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
+    vignette.addColorStop(1, 'rgba(5, 2, 10, 0.75)');
+    ctx.fillStyle = vignette;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
 
     // Increment live score every frame while game is running
     if (!isGameOver) {
