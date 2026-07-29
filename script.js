@@ -17,6 +17,10 @@ let bestScore = parseInt(localStorage.getItem('luckyNitroBestScore')) || 0;
 let coinsCount = parseInt(localStorage.getItem('luckyNitroCoins')) || 0;
 let floatingTexts = [];
 
+// Coin Sound
+const coinSound = new Audio("assets/audio/coin.mp3");
+coinSound.volume = 0.6;
+
 // Game over animation & state variables
 let crashTimer = 0;
 let playerCrashAngle = (Math.random() > 0.5 ? 1 : -1) * (Math.random() * 20 + 20) * (Math.PI / 180);
