@@ -1154,6 +1154,10 @@ class CoinManager {
                 playerBounds.y + playerBounds.height > coinBounds.y
             ) {
                 coin.collected = true;
+
+                coinSound.currentTime = 0;
+                coinSound.play();
+
                 coinsCount++;
                 localStorage.setItem('luckyNitroCoins', coinsCount);
 
