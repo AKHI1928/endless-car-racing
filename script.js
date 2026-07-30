@@ -472,6 +472,10 @@ class PlayerCar {
 
     setupListeners() {
         window.addEventListener('keydown', (e) => {
+            if (engineSound.paused) {
+                engineSound.play();
+                musicSound.play();
+    }
             if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
                 this.keys.left = true;
             }
