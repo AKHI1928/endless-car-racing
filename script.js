@@ -1730,6 +1730,7 @@ function gameLoop() {
             crashSound.currentTime = 0;
             crashSound.play();
             engineSound.pause();
+            musicSound.pause();
             crashTimer = 0;
             flashTimer = 0;
             playerCrashBackward = 0;
