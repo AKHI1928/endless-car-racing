@@ -498,6 +498,8 @@ class PlayerCar {
     tryActivateNitro() {
         if (!isGameOver && this.nitroMeter > 0 && !this.isNitroActive) {
             this.isNitroActive = true;
+            nitroSound.currentTime = 0;
+            nitroSound.play();
             this.nitroTimer = this.maxNitroFrames;
         }
     }
