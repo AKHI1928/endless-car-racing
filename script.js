@@ -1718,6 +1718,7 @@ function gameLoop() {
             isGameOver = true;
             crashSound.currentTime = 0;
             crashSound.play();
+            engineSound.pause();
             crashTimer = 0;
             flashTimer = 0;
             playerCrashBackward = 0;
