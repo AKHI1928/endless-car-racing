@@ -28,6 +28,9 @@ engineSound.volume = 0.3;
 const nitroSound = new Audio("assets/audio/nitro.mp3");
 nitroSound.loop = true;
 nitroSound.volume = 0.5;
+const musicSound = new Audio("assets/audio/music.mp3");
+musicSound.loop = true;
+musicSound.volume = 0.2;
 // Game over animation & state variables
 let crashTimer = 0;
 let playerCrashAngle = (Math.random() > 0.5 ? 1 : -1) * (Math.random() * 20 + 20) * (Math.PI / 180);
