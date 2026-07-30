@@ -1711,6 +1711,8 @@ function gameLoop() {
         // Check enemy traffic collisions
         if (enemyManager.checkCollisions(playerBounds, canvas.width, canvas.height)) {
             isGameOver = true;
+            crashSound.currentTime = 0;
+            crashSound.play();
             crashTimer = 0;
             flashTimer = 0;
             playerCrashBackward = 0;
