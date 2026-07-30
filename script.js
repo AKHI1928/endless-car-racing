@@ -1485,6 +1485,8 @@ const restartGame = () => {
     gameOverContainer.style.display = 'none';
     engineSound.currentTime = 0;
     engineSound.play();
+    musicSound.currentTime = 0;
+    musicSound.play();
 };
 
 playAgainBtn.addEventListener('click', restartGame);
