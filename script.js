@@ -557,6 +557,7 @@ class PlayerCar {
 
             if (this.nitroTimer <= 0 || this.nitroMeter <= 0) {
                 this.isNitroActive = false;
+                nitroSound.pause();
                 this.nitroTimer = 0;
             }
         } else {
