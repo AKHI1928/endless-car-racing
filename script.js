@@ -1474,6 +1474,8 @@ const restartGame = () => {
     coinManager.reset();
     floatingTexts = [];
     gameOverContainer.style.display = 'none';
+    engineSound.currentTime = 0;
+    engineSound.play();
 };
 
 playAgainBtn.addEventListener('click', restartGame);
