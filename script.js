@@ -20,7 +20,8 @@ let floatingTexts = [];
 // Coin Sound
 const coinSound = new Audio("assets/audio/coin.mp3");
 coinSound.volume = 0.6;
-
+const crashSound = new Audio("assets/audio/crash.mp3");
+crashSound.volume = 0.8;
 // Game over animation & state variables
 let crashTimer = 0;
 let playerCrashAngle = (Math.random() > 0.5 ? 1 : -1) * (Math.random() * 20 + 20) * (Math.PI / 180);
